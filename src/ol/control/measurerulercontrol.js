@@ -81,9 +81,28 @@ ol.control.MeasureRuler.formatFeatureText = function(feature) {
   var geom = /** @type {ol.geom.LineString} */ (feature.getGeometry());
   var length = geom.getLength();
   var str = '';
-  str += Math.round(length / 1852) + ' nm | ';
-  str += Math.round(length / 1609.3) + ' mi | ';
-  str += Math.round(length / 1000) + ' km';
+  var conversions = {};
+  // calculate the nautical miles
+  conversions.nm = length / 1852;
+  // calculate the miles
+  conversions.mi = length / 1609.3;
+  // calculate the kilometers
+  conversions.km = length / 1000;
+
+  for (var key in conversions) {
+    if (conversions[key].toString().split('.')[0].length < 2){
+      // round to 10s if single digit
+      conversions[key] = Math.round(conversions[key] * 10)/10;
+    } else {
+      // round to nearest whole number
+      conversions[key] = Math.round(conversions[key]);
+    }
+  }
+
+  str += conversions.nm + ' nm | ';
+  str += conversions.mi + ' mi | ';
+  str += conversions.km + ' km';
+
   return str;
 };
 
