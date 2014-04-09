@@ -194,7 +194,7 @@ ol.control.MeasureRuler.RULER_DEFAULT_STYLE = function(text) {
       })
     }),
     text: new ol.style.Text({
-      font: '10px Calibri, sans-serif',
+      font: '11px Calibri, sans-serif',
       text: text,
       fill: new ol.style.Fill({
         color: '#000'
