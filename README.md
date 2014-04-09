@@ -1,11 +1,9 @@
-# OpenLayers 3
+# OpenLayers 3 - ERD Edition
 
-[![Travis CI Status](https://secure.travis-ci.org/openlayers/ol3.png)](http://travis-ci.org/#!/openlayers/ol3)
 
-Welcome to [OpenLayers 3](http://ol3js.org/)!
 
-Check out the [hosted examples](http://ol3js.org/en/master/examples/), the [workshop](http://ol3js.org/ol3-workshop/) or poke around the evolving [API docs](http://ol3js.org/en/master/apidoc/).
+Welcome to [OpenLayers 3](http://ol3js.org/) - ERD Edition! A fork of the [OpenLayers 3 Source](http://github.com/openlayers/ol3). 
 
-Please don't ask questions in the github issue tracker but use [the mailing list](https://groups.google.com/forum/#!forum/ol3-dev) instead.
+The goal of this fork is to add features that ERD needs while maintaining code style and compatibility with the original OpenLayers 3 source. Features and functionality added here are free to be re-used in other projects or incorporated into ol3 source.
 
-Please see our guide on [contributing](CONTRIBUTING.md) if you're interested in getting involved.
+ERD (Emergency Response Division) is a child organization of the [http://response.restoration.noaa.gov/about](Office of Response and Restoration) and subsequently the National Ocean Service and NOAA.
