@@ -6,6 +6,7 @@ goog.require('ol.control.Control');
 goog.require('ol.geom.Geometry');
 goog.require('ol.geom.LineString');
 goog.require('ol.interaction.Draw');
+goog.require('ol.css');
 
 
 
