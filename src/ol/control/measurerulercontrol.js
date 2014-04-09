@@ -3,10 +3,10 @@ goog.provide('ol.control.MeasureRuler');
 goog.require('goog.dom');
 goog.require('goog.events');
 goog.require('ol.control.Control');
+goog.require('ol.css');
 goog.require('ol.geom.Geometry');
 goog.require('ol.geom.LineString');
 goog.require('ol.interaction.Draw');
-goog.require('ol.css');
 
 
 
@@ -14,7 +14,7 @@ goog.require('ol.css');
  * Adds a button that allows measurement along a LineString
  * @constructor
  * @extends {ol.control.Control}
- * @param {olx.control.ControlOptions} opt_options Measure ruler options.
+ * @param {olx.control.ControlOptions=} opt_options Measure ruler options.
  * @todo stability experimental
  */
 ol.control.MeasureRuler = function(opt_options) {
@@ -124,9 +124,7 @@ ol.control.MeasureRuler.prototype.initalize_ = function() {
 
   goog.events.listen(
       map.getViewport(),
-      [
-        goog.events.EventType.MOUSEMOVE
-      ],
+      goog.events.EventType.MOUSEMOVE,
       function(evt) {
         var pixel = map.getEventPixel(evt);
         var feature = map.forEachFeatureAtPixel(pixel, function(feature, layer) {
@@ -167,7 +165,8 @@ ol.control.MeasureRuler.RULER_DEFAULT_STYLE = function(text) {
     }),
     stroke: new ol.style.Stroke({
       color: '#ffcc33',
-      width: 2
+      width: 4,
+      lineCap: 'square'
     }),
     image: new ol.style.Circle({
       radius: 7,
@@ -196,10 +195,11 @@ ol.control.MeasureRuler.RULER_HOVER_STYLE = function(text) {
     }),
     stroke: new ol.style.Stroke({
       color: '#0099ff',
-      width: 3
+      width: 6,
+      lineCap: 'square'
     }),
     text: new ol.style.Text({
-      font: '10px Calibri, sans-serif',
+      font: '11px Calibri, sans-serif',
       text: text,
       fill: new ol.style.Fill({
         color: '#000'
