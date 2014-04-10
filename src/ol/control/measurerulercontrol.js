@@ -56,7 +56,7 @@ ol.control.MeasureRuler = function(opt_options) {
 
   /**
    * @public
-   * @type {element}
+   * @type {Element}
    */
   this.button = goog.dom.createDom(goog.dom.TagName.BUTTON, {
     'class': 'ol-has-tooltip'
@@ -337,7 +337,7 @@ ol.control.MeasureRuler.prototype.handleClick_ = function(pointerEvent) {
  */
 ol.control.MeasureRuler.prototype.drawEnd_ = function(drawEvent) {
   var map = this.getMap();
-  var feature = event.feature;
+  var feature = drawEvent.feature;
 
   feature.setStyle(function(resolution) {
     var text = ol.control.MeasureRuler.formatFeatureText(feature);
