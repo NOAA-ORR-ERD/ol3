@@ -293,12 +293,16 @@ def build_examples_all_js(t):
 @rule(r'\Abuild/examples/(?P<id>.*).json\Z')
 def examples_star_json(name, match):
     def action(t):
+        # It would make more sense to use olx.js as an input file here. We use
+        # it as an externs file instead to prevent "Cannot read property '*' of
+        # undefined" error when running examples in "raw" or "whitespace" mode.
+        # Note that we use the proper way in buildcfg/examples-all.json, which
+        # is only used to check the examples code using the compiler.
         content = json.dumps({
             'id': match.group('id'),
             'inherits': '../../buildcfg/base.json',
             'inputs': [
-                '../examples/%(id)s.js' % match.groupdict(),
-                '../externs/olx.js', # compiled with src for @typedef's
+                '../examples/%(id)s.js' % match.groupdict()
             ],
             'externs': [
                 '//jquery-1.7.js',
@@ -308,6 +312,7 @@ def examples_star_json(name, match):
                 '../externs/example.js',
                 '../externs/geojson.js',
                 '../externs/oli.js',
+                '../externs/olx.js',
                 '../externs/proj4js.js',
                 '../externs/tilejson.js',
                 '../externs/topojson.js',
