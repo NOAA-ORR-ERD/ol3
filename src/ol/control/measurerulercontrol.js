@@ -7,24 +7,33 @@ goog.require('ol.css');
 goog.require('ol.geom.Geometry');
 goog.require('ol.geom.LineString');
 goog.require('ol.interaction.Draw');
+goog.require('ol.pointer.PointerEventHandler');
 
 
 
 /**
- * Adds a button that allows measurement along a LineString
+ * Adds a button that allows measurement utilizing a LineString.
+ *
  * @constructor
  * @extends {ol.control.Control}
  * @param {olx.control.ControlOptions=} opt_options Measure ruler options.
- * @todo stability experimental
  */
 ol.control.MeasureRuler = function(opt_options) {
   var options = goog.isDef(opt_options) ? opt_options : {};
 
+  /**
+   * @public
+   * @type {string}
+   */
   this.name = 'ol.control.MeasureRuler';
 
-  this.draw = null;
+  /**
+   * @private
+   * @type {?ol.interaction.Draw}
+   */
+  this.draw_ = null;
 
-  this.cssClassName_ = goog.isDef(options.className) ?
+  var cssClassName = goog.isDef(options.className) ?
       options.className : 'ol-measure';
 
   var tipLabel = goog.isDef(options.tipLabel) ?
@@ -35,6 +44,10 @@ ol.control.MeasureRuler = function(opt_options) {
     'role': 'tooltip'
   }, tipLabel);
 
+  /**
+   * @public
+   * @type {element}
+   */
   this.button = goog.dom.createDom(goog.dom.TagName.BUTTON, {
     'class': 'ol-has-tooltip'
   });
@@ -53,15 +66,29 @@ ol.control.MeasureRuler = function(opt_options) {
     this.blur();
   }, false);
 
-  this.source = new ol.source.Vector();
-  this.vector = new ol.layer.Vector({
-    source: this.source,
+  /**
+   * @private
+   * @type {ol.source.Vector}
+   */
+  this.source_ = new ol.source.Vector();
+
+  /**
+   * @private
+   * @type {ol.layer.Vector}
+   */
+  this.vector_ = new ol.layer.Vector({
+    source: this.source_,
     name: 'measure'
   });
+
+  /**
+   * @private
+   * @type {boolean}
+   */
   this.initialized_ = false;
 
   var element = goog.dom.createDom(goog.dom.TagName.DIV, {
-    'class': this.cssClassName_ + ' ' + ol.css.CLASS_UNSELECTABLE
+    'class': cssClassName + ' ' + ol.css.CLASS_UNSELECTABLE
   }, this.button);
 
   goog.base(this, {
@@ -73,8 +100,10 @@ goog.inherits(ol.control.MeasureRuler, ol.control.Control);
 
 
 /**
+ * Method for formatting the text to print on the ruler
+ *
  * @public
- * @param {ol.Feature} feature Feature
+ * @param {ol.Feature} feature Feature to format text for
  * @return {string}
  */
 ol.control.MeasureRuler.formatFeatureText = function(feature) {
@@ -90,9 +119,9 @@ ol.control.MeasureRuler.formatFeatureText = function(feature) {
   conversions.km = length / 1000;
 
   for (var key in conversions) {
-    if (conversions[key].toString().split('.')[0].length < 2){
+    if (conversions[key].toString().split('.')[0].length < 2) {
       // round to 10s if single digit
-      conversions[key] = Math.round(conversions[key] * 10)/10;
+      conversions[key] = Math.round(conversions[key] * 10) / 10;
     } else {
       // round to nearest whole number
       conversions[key] = Math.round(conversions[key]);
@@ -122,9 +151,16 @@ ol.control.MeasureRuler.prototype.handleMapPostrender = function(mapEvent) {
   }
 };
 
+
+/**
+ * Initializes adds a layer to the map that will contain any rulers added
+ * and sets up listeners for hover and click events on that layer.
+ *
+ * @private
+ */
 ol.control.MeasureRuler.prototype.initalize_ = function() {
   var map = this.getMap();
-  map.addLayer(this.vector);
+  map.addLayer(this.vector_);
 
   goog.events.listen(
       map.getViewport(),
@@ -146,9 +182,9 @@ ol.control.MeasureRuler.prototype.initalize_ = function() {
       goog.events.EventType.MOUSEMOVE,
       function(evt) {
         var pixel = map.getEventPixel(evt);
-        var feature = map.forEachFeatureAtPixel(pixel, function(feature, layer) {
-          if (layer.get('name') === 'measure') {
-            return feature;
+        var feature = map.forEachFeatureAtPixel(pixel, function(f, l) {
+          if (l.get('name') === 'measure') {
+            return f;
           }
           return false;
         });
@@ -177,6 +213,15 @@ ol.control.MeasureRuler.prototype.initalize_ = function() {
   this.initialized_ = true;
 };
 
+
+/**
+ * A pseudo constant as text for the ruler is part of the style. Defines
+ * the default style for rulers.
+ *
+ * @public
+ * @param {string} text Text to be writen on top of the ruler
+ * @return {ol.style.Style} Fully typed OpenLayers style object
+ */
 ol.control.MeasureRuler.RULER_DEFAULT_STYLE = function(text) {
   return new ol.style.Style({
     fill: new ol.style.Fill({
@@ -207,6 +252,15 @@ ol.control.MeasureRuler.RULER_DEFAULT_STYLE = function(text) {
   });
 };
 
+
+/**
+ * A pseudo constant as text for the ruler is part of style. Defines
+ * the hover style for rulers.
+ *
+ * @public
+ * @param {string} text Text to be writen on top of the ruler
+ * @return {ol.style.Style} Fully typed OpenLayers style object
+ */
 ol.control.MeasureRuler.RULER_HOVER_STYLE = function(text) {
   return new ol.style.Style({
     fill: new ol.style.Fill({
@@ -231,31 +285,47 @@ ol.control.MeasureRuler.RULER_HOVER_STYLE = function(text) {
   });
 };
 
+
+/**
+ * Method for toggling the map interactivity of drawing rulers
+ *
+ * @public
+ */
 ol.control.MeasureRuler.prototype.toggle = function() {
   var map = this.getMap();
 
   goog.dom.classes.toggle(this.button, 'on');
 
-  if (this.draw === null) {
-    this.draw = new ol.interaction.Draw({
-      source: this.source,
+  if (this.draw_ === null) {
+    this.draw_ = new ol.interaction.Draw({
+      source: this.source_,
       type: /** @type {ol.geom.GeometryType} */ ('LineString')
     });
-    map.addInteraction(this.draw);
+    map.addInteraction(this.draw_);
 
-    this.draw.on('drawend', this.drawEnd_, this);
+    this.draw_.on('drawend', this.drawEnd_, this);
   } else {
-    map.removeInteraction(this.draw);
-    this.draw = null;
+    map.removeInteraction(this.draw_);
+    this.draw_ = null;
     this.button.blur();
   }
 };
 
+
+/**
+ * @private
+ * @param {ol.pointer.PointerEvent} pointerEvent Pointer Event
+ */
 ol.control.MeasureRuler.prototype.handleClick_ = function(pointerEvent) {
   this.toggle();
 };
 
-ol.control.MeasureRuler.prototype.drawEnd_ = function(event) {
+
+/**
+ * @private
+ * @param {ol.DrawEvent} drawEvent
+ */
+ol.control.MeasureRuler.prototype.drawEnd_ = function(drawEvent) {
   var map = this.getMap();
   var feature = event.feature;
 
