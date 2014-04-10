@@ -1,13 +1,23 @@
 goog.provide('ol.control.MeasureRuler');
 
 goog.require('goog.dom');
+goog.require('goog.dom.TagName');
+goog.require('goog.dom.classes');
 goog.require('goog.events');
+goog.require('goog.events.EventType');
 goog.require('ol.control.Control');
 goog.require('ol.css');
 goog.require('ol.geom.Geometry');
 goog.require('ol.geom.LineString');
 goog.require('ol.interaction.Draw');
+goog.require('ol.layer.Vector');
 goog.require('ol.pointer.PointerEventHandler');
+goog.require('ol.source.Vector');
+goog.require('ol.style.Circle');
+goog.require('ol.style.Fill');
+goog.require('ol.style.Stroke');
+goog.require('ol.style.Style');
+goog.require('ol.style.Text');
 
 
 
