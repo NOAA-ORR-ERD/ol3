@@ -47,7 +47,7 @@ ol.control.MeasureRuler = function(opt_options) {
       options.className : 'ol-measure-ruler';
 
   var tipLabel = goog.isDef(options.tipLabel) ?
-      options.tipLabel : 'Measure - Click existing point to end line.' +
+      options.tipLabel : 'Ruler - Click existing point to end line.' +
           ' Click existing ruler to remove';
 
   var tip = goog.dom.createDom(goog.dom.TagName.SPAN, {
