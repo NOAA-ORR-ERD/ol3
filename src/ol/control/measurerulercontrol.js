@@ -178,7 +178,7 @@ ol.control.MeasureRuler.prototype.initialize_ = function() {
       function(evt) {
         var pixel = map.getEventPixel(evt);
         var set = map.forEachFeatureAtPixel(pixel, function(feature, layer) {
-          if (layer.get('name') === 'measure') {
+          if (layer.get('name') === 'measure-ruler') {
             return {layer: layer, feature: feature};
           }
         });
@@ -193,7 +193,7 @@ ol.control.MeasureRuler.prototype.initialize_ = function() {
       function(evt) {
         var pixel = map.getEventPixel(evt);
         var feature = map.forEachFeatureAtPixel(pixel, function(f, l) {
-          if (l.get('name') === 'measure') {
+          if (l.get('name') === 'measure-ruler') {
             return f;
           }
           return false;
