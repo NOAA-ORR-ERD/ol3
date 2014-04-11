@@ -26,7 +26,7 @@ ol.control.MeasureRadius = function(opt_options) {
    * @public
    * @type {Element}
    */
-  this.button = goog.dom.createDom(goog.com.TagName.BUTTON, {
+  this.button = goog.dom.createDom(goog.dom.TagName.BUTTON, {
     'class': 'ol-has-tooltip'
   });
 
@@ -34,7 +34,7 @@ ol.control.MeasureRadius = function(opt_options) {
 
   var buttonHandler = new ol.pointer.PointerEventHandler(this.button);
   this.registerDisposable(buttonHandler);
-  goog.events.listen(buttonHander,
+  goog.events.listen(buttonHandler,
       ol.pointer.EventType.POINTERUP, this.handleClick_, false, this);
 
   goog.events.listen(this.button, [
@@ -48,13 +48,13 @@ ol.control.MeasureRadius = function(opt_options) {
    * @private
    * @type {ol.source.Vector}
    */
-  this.source_ = ol.source.Vector();
+  this.source_ = new ol.source.Vector();
 
   /**
    * @private
    * @type {ol.layer.Vector}
    */
-  this.vector_ = ol.layer.Vector({
+  this.vector_ = new ol.layer.Vector({
     source: this.source_,
     name: 'measure-radius'
   });
@@ -63,14 +63,82 @@ ol.control.MeasureRadius = function(opt_options) {
    * @private
    * @type {boolean}
    */
-  this.initalized_ = false;
+  this.initialized_ = false;
 
-  var element = goog.dom.createDom(good.dom.TagName.DIV, {
+  /**
+   * @private
+   * @type {ol.interaction.Draw}
+   */
+  this.draw_ = null;
+
+  var element = goog.dom.createDom(goog.dom.TagName.DIV, {
     'class': cssClassName + ' ' + ol.css.CLASS_UNSELECTABLE
-  });
+  }, this.button);
 
   goog.base(this, {
     element: element,
     target: options.target
   });
+};
+goog.inherits(ol.control.MeasureRadius, ol.control.Control);
+
+
+/**
+ * @private
+ */
+ol.control.MeasureRadius.prototype.initialize_ = function() {
+  var map = this.getMap();
+  map.addLayer(this.vector_);
+
+  this.initialized_ = true;
+};
+
+
+/**
+ * Method for toggling the map interactivity of drawing radial measures
+ *
+ * @public
+ */
+ol.control.MeasureRadius.prototype.toggle = function() {
+  var map = this.getMap();
+
+  goog.dom.classes.toggle(this.button, 'on');
+
+  if (this.draw_ === null) {
+    this.draw_ = new ol.interaction.Draw({
+      source: this.source_,
+      type: /** @type {ol.geom.GeometryType} */ ('Circle')
+    });
+    map.addInteraction(this.draw_);
+
+  } else {
+    map.removeInteraction(this.draw_);
+    this.draw_ = null;
+    this.button.blur();
+  }
+};
+
+
+/**
+ * @private
+ * @param {ol.pointer.PointerEvent} pointerEvent Pointer Event
+ */
+ol.control.MeasureRadius.prototype.handleClick_ = function(pointerEvent) {
+  this.toggle();
+};
+
+
+/**
+ * @public
+ * @param {ol.MapEvent} mapEvent
+ */
+ol.control.MeasureRadius.prototype.handleMapPostrender = function(mapEvent) {
+  if (goog.isNull(mapEvent.frameState)) {
+    if (goog.isDefAndNotNull(mapEvent.frameState.view2DState)) {
+      return;
+    }
+  }
+  if (!this.initialized_) {
+    this.initialize_();
+  }
 };
