@@ -157,7 +157,7 @@ ol.control.MeasureRuler.prototype.handleMapPostrender = function(mapEvent) {
     }
   }
   if (!this.initialized_) {
-    this.initalize_();
+    this.initialize_();
   }
 };
 
@@ -168,7 +168,7 @@ ol.control.MeasureRuler.prototype.handleMapPostrender = function(mapEvent) {
  *
  * @private
  */
-ol.control.MeasureRuler.prototype.initalize_ = function() {
+ol.control.MeasureRuler.prototype.initialize_ = function() {
   var map = this.getMap();
   map.addLayer(this.vector_);
 
