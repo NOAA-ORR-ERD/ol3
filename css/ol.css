@@ -283,3 +283,46 @@ button.ol-full-screen-true:after {
 .ol-has-tooltip [role=tooltip] {
   font-family: 'Lucida Grande',Verdana,Geneva,Lucida,Arial,Helvetica,sans-serif;
 }
+
+.ol-measure {
+  top: 5em;
+  left: .5em;
+  position: absolute;
+  background-color: rgba(255, 255, 255, 0.4);
+  border-radius: 4px;
+  padding: 2px;
+}
+.ol-measure:hover {
+  background-color: rgba(255, 255, 255, 0.6);
+}
+.ol-measure button {
+  overflow: hidden;
+  color: transparent;
+  background: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABoAAAAaCAYAAACpSkzOAAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH3gQDDywnlLJHKQAAAPRJREFUSMe1lGERgzAMhV/vJgAJSOgcMCeVgBMkIKESJgEcbA6Yg7c/6a3HgEKb5q4/Eki/S9IXQMFINiQ9yQG1TCATfzbWhoxydGFrSBTXg6XapQI7aFevBtuoxEm8J9lt/B9gQ0klUwzbyQkgn1uJXcXcAWQi2VyFeJKLnDb+pglZxLcknyRtol1ZkOeZ5FLIS2JO/K4K5IwWitt1Rngag48FmVJ/9hP+e7Zr9ZdCQjVBkDqDlyQfrRUbBKk2eLEbgHdwjDEzyTuAdg8CwAGYATyMMZ+rWzm50nMruQRTgxzB1CFbsGqQDVg9SAQbgng17vsC2lU/J0j7uZMAAAAASUVORK5CYII=') no-repeat center center;
+  background-size: 70%;
+  display: block;
+  margin: 1px;
+  padding: 0;
+  font-size: 1.14em;
+  font-weight: bold;
+  text-decoration: none;
+  text-align: center;
+  height: 1.375em;
+  width: 1.375em;
+  line-height: .4em;
+  background-color: #7b98bc;
+  background-color: rgba(0, 60, 136, 0.5);
+  border: none;
+  border-radius: 2px;
+}
+.ol-measure button:hover {
+  text-decoration: none;
+  background-color: #4c6079;
+  background-color: rgba(0, 60, 136, 0.7);
+}
+.ol-measure button.on {
+  background-color: #ffcc33;
+}
+.ol-measure button.on:hover {
+  background-color: #ffcc33;
+}
