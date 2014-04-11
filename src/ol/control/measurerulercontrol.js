@@ -44,7 +44,7 @@ ol.control.MeasureRuler = function(opt_options) {
   this.draw_ = null;
 
   var cssClassName = goog.isDef(options.className) ?
-      options.className : 'ol-measure';
+      options.className : 'ol-measure-ruler';
 
   var tipLabel = goog.isDef(options.tipLabel) ?
       options.tipLabel : 'Measure - Click existing point to end line.' +

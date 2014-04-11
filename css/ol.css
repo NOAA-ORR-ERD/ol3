@@ -284,7 +284,7 @@ button.ol-full-screen-true:after {
   font-family: 'Lucida Grande',Verdana,Geneva,Lucida,Arial,Helvetica,sans-serif;
 }
 
-.ol-measure {
+.ol-measure-ruler {
   top: 5em;
   left: .5em;
   position: absolute;
@@ -292,10 +292,10 @@ button.ol-full-screen-true:after {
   border-radius: 4px;
   padding: 2px;
 }
-.ol-measure:hover {
+.ol-measure-ruler:hover {
   background-color: rgba(255, 255, 255, 0.6);
 }
-.ol-measure button {
+.ol-measure-ruler button {
   overflow: hidden;
   color: transparent;
   background: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABoAAAAaCAYAAACpSkzOAAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH3gQDDywnlLJHKQAAAPRJREFUSMe1lGERgzAMhV/vJgAJSOgcMCeVgBMkIKESJgEcbA6Yg7c/6a3HgEKb5q4/Eki/S9IXQMFINiQ9yQG1TCATfzbWhoxydGFrSBTXg6XapQI7aFevBtuoxEm8J9lt/B9gQ0klUwzbyQkgn1uJXcXcAWQi2VyFeJKLnDb+pglZxLcknyRtol1ZkOeZ5FLIS2JO/K4K5IwWitt1Rngag48FmVJ/9hP+e7Zr9ZdCQjVBkDqDlyQfrRUbBKk2eLEbgHdwjDEzyTuAdg8CwAGYATyMMZ+rWzm50nMruQRTgxzB1CFbsGqQDVg9SAQbgng17vsC2lU/J0j7uZMAAAAASUVORK5CYII=') no-repeat center center;
@@ -315,14 +315,14 @@ button.ol-full-screen-true:after {
   border: none;
   border-radius: 2px;
 }
-.ol-measure button:hover {
+.ol-measure-ruler button:hover {
   text-decoration: none;
   background-color: #4c6079;
   background-color: rgba(0, 60, 136, 0.7);
 }
-.ol-measure button.on {
+.ol-measure-ruler button.on {
   background-color: #ffcc33;
 }
-.ol-measure button.on:hover {
+.ol-measure-ruler button.on:hover {
   background-color: #ffcc33;
 }
