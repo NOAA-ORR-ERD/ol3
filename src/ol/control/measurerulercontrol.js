@@ -88,7 +88,7 @@ ol.control.MeasureRuler = function(opt_options) {
    */
   this.vector_ = new ol.layer.Vector({
     source: this.source_,
-    name: 'measure'
+    name: 'measure-ruler'
   });
 
   /**
