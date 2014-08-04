@@ -199,7 +199,9 @@ ol.control.MeasureRuler.prototype.initialize_ = function() {
           return false;
         });
         if (feature) {
-          map.getViewport().style.cursor = 'pointer';
+          if(map.getViewport().style.cursor === ''){
+            map.getViewport().style.cursor = 'pointer';
+          }
 
           ol.control.MeasureRuler.ACTIVE_RULER = feature;
           feature.setStyle(function(resolution) {
@@ -217,7 +219,9 @@ ol.control.MeasureRuler.prototype.initialize_ = function() {
             });
             ol.control.MeasureRuler.ACTIVE_RULER = null;
           }
-          map.getViewport().style.cursor = '';
+          if(map.getViewport().style.cursor === 'pointer'){
+            map.getViewport().style.cursor = '';
+          }
         }
       });
   this.initialized_ = true;
