@@ -1,4 +1,3 @@
-// FIXME decide default snapToPixel behaviour
 // FIXME add option to apply snapToPixel to all coordinates?
 // FIXME can eliminate empty set styles and strokes (when all geoms skipped)
 
@@ -133,12 +132,6 @@ ol.render.canvas.Replay = function(tolerance, maxExtent, resolution) {
    */
   this.tmpLocalTransform_ = goog.vec.Mat4.createNumber();
 
-  /**
-   * @private
-   * @type {Object}
-   */
-  this.instructionIndices_ = {};
-
 };
 
 
@@ -202,15 +195,14 @@ ol.render.canvas.Replay.prototype.appendFlatCoordinates =
 /**
  * @protected
  * @param {ol.geom.Geometry} geometry Geometry.
- * @param {number} uid Data uid
+ * @param {Object} data Opaque data object.
  */
-ol.render.canvas.Replay.prototype.beginGeometry = function(geometry, uid) {
+ol.render.canvas.Replay.prototype.beginGeometry = function(geometry, data) {
   this.beginGeometryInstruction1_ =
-      [ol.render.canvas.Instruction.BEGIN_GEOMETRY, geometry, 0];
+      [ol.render.canvas.Instruction.BEGIN_GEOMETRY, geometry, data, 0];
   this.instructions.push(this.beginGeometryInstruction1_);
-  this.instructionIndices_[this.instructions.length - 1] = uid.toString();
   this.beginGeometryInstruction2_ =
-      [ol.render.canvas.Instruction.BEGIN_GEOMETRY, geometry, 0];
+      [ol.render.canvas.Instruction.BEGIN_GEOMETRY, geometry, data, 0];
   this.hitDetectionInstructions.push(this.beginGeometryInstruction2_);
 };
 
@@ -237,7 +229,8 @@ ol.render.canvas.Replay.prototype.replay_ = function(
     pixelCoordinates = this.pixelCoordinates_;
   } else {
     pixelCoordinates = ol.geom.flat.transform.transform2D(
-        this.coordinates, 2, transform, this.pixelCoordinates_);
+        this.coordinates, 0, this.coordinates.length, 2,
+        transform, this.pixelCoordinates_);
     goog.vec.Mat4.setFromArray(this.renderedTransform_, transform);
     goog.asserts.assert(pixelCoordinates === this.pixelCoordinates_);
   }
@@ -249,15 +242,16 @@ ol.render.canvas.Replay.prototype.replay_ = function(
   while (i < ii) {
     var instruction = instructions[i];
     var type = /** @type {ol.render.canvas.Instruction} */ (instruction[0]);
-    var fill, geometry, stroke, text, x, y;
+    var data, fill, geometry, stroke, text, x, y;
     switch (type) {
       case ol.render.canvas.Instruction.BEGIN_GEOMETRY:
         geometry = /** @type {ol.geom.Geometry} */ (instruction[1]);
-        if (!goog.isDef(goog.object.get(skippedFeaturesHash,
-            this.instructionIndices_[i]))) {
+        data = /** @type {Object} */ (instruction[2]);
+        var dataUid = goog.getUid(data).toString();
+        if (!goog.isDef(goog.object.get(skippedFeaturesHash, dataUid))) {
           ++i;
         } else {
-          i = /** @type {number} */ (instruction[2]);
+          i = /** @type {number} */ (instruction[3]);
         }
         break;
       case ol.render.canvas.Instruction.BEGIN_PATH:
@@ -265,6 +259,8 @@ ol.render.canvas.Replay.prototype.replay_ = function(
         ++i;
         break;
       case ol.render.canvas.Instruction.CIRCLE:
+        goog.asserts.assert(goog.isNumber(instruction[1]));
+        d = /** @type {number} */ (instruction[1]);
         var x1 = pixelCoordinates[d];
         var y1 = pixelCoordinates[d + 1];
         var x2 = pixelCoordinates[d + 2];
@@ -273,7 +269,6 @@ ol.render.canvas.Replay.prototype.replay_ = function(
         var dy = y2 - y1;
         var r = Math.sqrt(dx * dx + dy * dy);
         context.arc(x1, y1, r, 0, 2 * Math.PI, true);
-        d += 4;
         ++i;
         break;
       case ol.render.canvas.Instruction.CLOSE_PATH:
@@ -290,13 +285,15 @@ ol.render.canvas.Replay.prototype.replay_ = function(
         // Remaining arguments in DRAW_IMAGE are in alphabetical order
         var anchorX = /** @type {number} */ (instruction[4]) * pixelRatio;
         var anchorY = /** @type {number} */ (instruction[5]) * pixelRatio;
-        var height = /** @type {number} */ (instruction[6]) * pixelRatio;
+        var height = /** @type {number} */ (instruction[6]);
         var opacity = /** @type {number} */ (instruction[7]);
-        var rotateWithView = /** @type {boolean} */ (instruction[8]);
-        var rotation = /** @type {number} */ (instruction[9]);
-        var scale = /** @type {number} */ (instruction[10]);
-        var snapToPixel = /** @type {boolean|undefined} */ (instruction[11]);
-        var width = /** @type {number} */ (instruction[12]) * pixelRatio;
+        var originX = /** @type {number} */ (instruction[8]);
+        var originY = /** @type {number} */ (instruction[9]);
+        var rotateWithView = /** @type {boolean} */ (instruction[10]);
+        var rotation = /** @type {number} */ (instruction[11]);
+        var scale = /** @type {number} */ (instruction[12]);
+        var snapToPixel = /** @type {boolean} */ (instruction[13]);
+        var width = /** @type {number} */ (instruction[14]);
         if (rotateWithView) {
           rotation += viewRotation;
         }
@@ -326,7 +323,8 @@ ol.render.canvas.Replay.prototype.replay_ = function(
             context.globalAlpha = alpha * opacity;
           }
 
-          context.drawImage(image, x, y, width, height);
+          context.drawImage(image, originX, originY, width, height,
+              x, y, width * pixelRatio, height * pixelRatio);
 
           if (opacity != 1) {
             context.globalAlpha = alpha;
@@ -385,7 +383,7 @@ ol.render.canvas.Replay.prototype.replay_ = function(
       case ol.render.canvas.Instruction.END_GEOMETRY:
         if (goog.isDef(geometryCallback)) {
           geometry = /** @type {ol.geom.Geometry} */ (instruction[1]);
-          var data = /** @type {Object} */ (instruction[2]);
+          data = /** @type {Object} */ (instruction[2]);
           var result = geometryCallback(geometry, data);
           if (result) {
             return result;
@@ -420,8 +418,10 @@ ol.render.canvas.Replay.prototype.replay_ = function(
         goog.asserts.assert(goog.isString(instruction[4]));
         goog.asserts.assert(goog.isNumber(instruction[5]));
         goog.asserts.assert(!goog.isNull(instruction[6]));
+        var usePixelRatio = goog.isDef(instruction[7]) ? instruction[7] : true;
+        var lineWidth = /** @type {number} */ (instruction[2]);
         context.strokeStyle = /** @type {string} */ (instruction[1]);
-        context.lineWidth = /** @type {number} */ (instruction[2]) * pixelRatio;
+        context.lineWidth = usePixelRatio ? lineWidth * pixelRatio : lineWidth;
         context.lineCap = /** @type {string} */ (instruction[3]);
         context.lineJoin = /** @type {string} */ (instruction[4]);
         context.miterLimit = /** @type {number} */ (instruction[5]);
@@ -512,7 +512,7 @@ ol.render.canvas.Replay.prototype.reverseHitDetectionInstructions_ =
       goog.asserts.assert(begin == -1);
       begin = i;
     } else if (type == ol.render.canvas.Instruction.BEGIN_GEOMETRY) {
-      instruction[2] = i;
+      instruction[3] = i;
       goog.asserts.assert(begin >= 0);
       ol.array.reverseSubArray(this.hitDetectionInstructions, begin, i);
       begin = -1;
@@ -597,10 +597,10 @@ ol.render.canvas.Replay.prototype.drawText = goog.abstractMethod;
 ol.render.canvas.Replay.prototype.endGeometry =
     function(geometry, data) {
   goog.asserts.assert(!goog.isNull(this.beginGeometryInstruction1_));
-  this.beginGeometryInstruction1_[2] = this.instructions.length;
+  this.beginGeometryInstruction1_[3] = this.instructions.length;
   this.beginGeometryInstruction1_ = null;
   goog.asserts.assert(!goog.isNull(this.beginGeometryInstruction2_));
-  this.beginGeometryInstruction2_[2] = this.hitDetectionInstructions.length;
+  this.beginGeometryInstruction2_[3] = this.hitDetectionInstructions.length;
   this.beginGeometryInstruction2_ = null;
   var endGeometryInstruction =
       [ol.render.canvas.Instruction.END_GEOMETRY, geometry, data];
@@ -705,6 +705,18 @@ ol.render.canvas.ImageReplay = function(tolerance, maxExtent, resolution) {
 
   /**
    * @private
+   * @type {number|undefined}
+   */
+  this.originX_ = undefined;
+
+  /**
+   * @private
+   * @type {number|undefined}
+   */
+  this.originY_ = undefined;
+
+  /**
+   * @private
    * @type {boolean|undefined}
    */
   this.rotateWithView_ = undefined;
@@ -764,12 +776,14 @@ ol.render.canvas.ImageReplay.prototype.drawPointGeometry =
   goog.asserts.assert(goog.isDef(this.anchorY_));
   goog.asserts.assert(goog.isDef(this.height_));
   goog.asserts.assert(goog.isDef(this.opacity_));
+  goog.asserts.assert(goog.isDef(this.originX_));
+  goog.asserts.assert(goog.isDef(this.originY_));
   goog.asserts.assert(goog.isDef(this.rotateWithView_));
   goog.asserts.assert(goog.isDef(this.rotation_));
   goog.asserts.assert(goog.isDef(this.scale_));
   goog.asserts.assert(goog.isDef(this.width_));
   ol.extent.extend(this.extent_, pointGeometry.getExtent());
-  this.beginGeometry(pointGeometry, goog.getUid(data));
+  this.beginGeometry(pointGeometry, data);
   var flatCoordinates = pointGeometry.getFlatCoordinates();
   var stride = pointGeometry.getStride();
   var myBegin = this.coordinates.length;
@@ -779,16 +793,16 @@ ol.render.canvas.ImageReplay.prototype.drawPointGeometry =
     ol.render.canvas.Instruction.DRAW_IMAGE, myBegin, myEnd, this.image_,
     // Remaining arguments to DRAW_IMAGE are in alphabetical order
     this.anchorX_, this.anchorY_, this.height_, this.opacity_,
-    this.rotateWithView_, this.rotation_, this.scale_, this.snapToPixel_,
-    this.width_
+    this.originX_, this.originY_, this.rotateWithView_, this.rotation_,
+    this.scale_, this.snapToPixel_, this.width_
   ]);
   this.hitDetectionInstructions.push([
     ol.render.canvas.Instruction.DRAW_IMAGE, myBegin, myEnd,
     this.hitDetectionImage_,
     // Remaining arguments to DRAW_IMAGE are in alphabetical order
     this.anchorX_, this.anchorY_, this.height_, this.opacity_,
-    this.rotateWithView_, this.rotation_, this.scale_, this.snapToPixel_,
-    this.width_
+    this.originX_, this.originY_, this.rotateWithView_, this.rotation_,
+    this.scale_, this.snapToPixel_, this.width_
   ]);
   this.endGeometry(pointGeometry, data);
 };
@@ -806,12 +820,14 @@ ol.render.canvas.ImageReplay.prototype.drawMultiPointGeometry =
   goog.asserts.assert(goog.isDef(this.anchorY_));
   goog.asserts.assert(goog.isDef(this.height_));
   goog.asserts.assert(goog.isDef(this.opacity_));
+  goog.asserts.assert(goog.isDef(this.originX_));
+  goog.asserts.assert(goog.isDef(this.originY_));
   goog.asserts.assert(goog.isDef(this.rotateWithView_));
   goog.asserts.assert(goog.isDef(this.rotation_));
   goog.asserts.assert(goog.isDef(this.scale_));
   goog.asserts.assert(goog.isDef(this.width_));
   ol.extent.extend(this.extent_, multiPointGeometry.getExtent());
-  this.beginGeometry(multiPointGeometry, goog.getUid(data));
+  this.beginGeometry(multiPointGeometry, data);
   var flatCoordinates = multiPointGeometry.getFlatCoordinates();
   var stride = multiPointGeometry.getStride();
   var myBegin = this.coordinates.length;
@@ -821,16 +837,16 @@ ol.render.canvas.ImageReplay.prototype.drawMultiPointGeometry =
     ol.render.canvas.Instruction.DRAW_IMAGE, myBegin, myEnd, this.image_,
     // Remaining arguments to DRAW_IMAGE are in alphabetical order
     this.anchorX_, this.anchorY_, this.height_, this.opacity_,
-    this.rotateWithView_, this.rotation_, this.scale_, this.snapToPixel_,
-    this.width_
+    this.originX_, this.originY_, this.rotateWithView_, this.rotation_,
+    this.scale_, this.snapToPixel_, this.width_
   ]);
   this.hitDetectionInstructions.push([
     ol.render.canvas.Instruction.DRAW_IMAGE, myBegin, myEnd,
     this.hitDetectionImage_,
     // Remaining arguments to DRAW_IMAGE are in alphabetical order
     this.anchorX_, this.anchorY_, this.height_, this.opacity_,
-    this.rotateWithView_, this.rotation_, this.scale_, this.snapToPixel_,
-    this.width_
+    this.originX_, this.originY_, this.rotateWithView_, this.rotation_,
+    this.scale_, this.snapToPixel_, this.width_
   ]);
   this.endGeometry(multiPointGeometry, data);
 };
@@ -849,6 +865,8 @@ ol.render.canvas.ImageReplay.prototype.finish = function() {
   this.height_ = undefined;
   this.scale_ = undefined;
   this.opacity_ = undefined;
+  this.originX_ = undefined;
+  this.originY_ = undefined;
   this.rotateWithView_ = undefined;
   this.rotation_ = undefined;
   this.snapToPixel_ = undefined;
@@ -869,12 +887,16 @@ ol.render.canvas.ImageReplay.prototype.setImageStyle = function(imageStyle) {
   goog.asserts.assert(!goog.isNull(hitDetectionImage));
   var image = imageStyle.getImage(1);
   goog.asserts.assert(!goog.isNull(image));
+  var origin = imageStyle.getOrigin();
+  goog.asserts.assert(!goog.isNull(origin));
   this.anchorX_ = anchor[0];
   this.anchorY_ = anchor[1];
   this.hitDetectionImage_ = hitDetectionImage;
   this.image_ = image;
   this.height_ = size[1];
   this.opacity_ = imageStyle.getOpacity();
+  this.originX_ = origin[0];
+  this.originY_ = origin[1];
   this.rotateWithView_ = imageStyle.getRotateWithView();
   this.rotation_ = imageStyle.getRotation();
   this.scale_ = imageStyle.getScale();
@@ -1023,7 +1045,7 @@ ol.render.canvas.LineStringReplay.prototype.drawLineStringGeometry =
   }
   ol.extent.extend(this.extent_, lineStringGeometry.getExtent());
   this.setStrokeStyle_();
-  this.beginGeometry(lineStringGeometry, goog.getUid(data));
+  this.beginGeometry(lineStringGeometry, data);
   this.hitDetectionInstructions.push(
       [ol.render.canvas.Instruction.SET_STROKE_STYLE,
        state.strokeStyle, state.lineWidth, state.lineCap, state.lineJoin,
@@ -1052,7 +1074,7 @@ ol.render.canvas.LineStringReplay.prototype.drawMultiLineStringGeometry =
   }
   ol.extent.extend(this.extent_, multiLineStringGeometry.getExtent());
   this.setStrokeStyle_();
-  this.beginGeometry(multiLineStringGeometry, goog.getUid(data));
+  this.beginGeometry(multiLineStringGeometry, data);
   this.hitDetectionInstructions.push(
       [ol.render.canvas.Instruction.SET_STROKE_STYLE,
        state.strokeStyle, state.lineWidth, state.lineCap, state.lineJoin,
@@ -1230,7 +1252,7 @@ ol.render.canvas.PolygonReplay.prototype.drawCircleGeometry =
   }
   ol.extent.extend(this.extent_, circleGeometry.getExtent());
   this.setFillStrokeStyles_();
-  this.beginGeometry(circleGeometry, goog.getUid(data));
+  this.beginGeometry(circleGeometry, data);
   // always fill the circle for hit detection
   this.hitDetectionInstructions.push(
       [ol.render.canvas.Instruction.SET_FILL_STYLE,
@@ -1243,13 +1265,13 @@ ol.render.canvas.PolygonReplay.prototype.drawCircleGeometry =
   }
   var flatCoordinates = circleGeometry.getFlatCoordinates();
   var stride = circleGeometry.getStride();
+  var myBegin = this.coordinates.length;
   this.appendFlatCoordinates(
       flatCoordinates, 0, flatCoordinates.length, stride, false);
   var beginPathInstruction = [ol.render.canvas.Instruction.BEGIN_PATH];
-  var circleInstruction = [ol.render.canvas.Instruction.CIRCLE];
+  var circleInstruction = [ol.render.canvas.Instruction.CIRCLE, myBegin];
   this.instructions.push(beginPathInstruction, circleInstruction);
   this.hitDetectionInstructions.push(beginPathInstruction, circleInstruction);
-  this.endGeometry(circleGeometry, data);
   var fillInstruction = [ol.render.canvas.Instruction.FILL];
   this.hitDetectionInstructions.push(fillInstruction);
   if (goog.isDef(state.fillStyle)) {
@@ -1261,6 +1283,7 @@ ol.render.canvas.PolygonReplay.prototype.drawCircleGeometry =
     this.instructions.push(strokeInstruction);
     this.hitDetectionInstructions.push(strokeInstruction);
   }
+  this.endGeometry(circleGeometry, data);
 };
 
 
@@ -1281,7 +1304,7 @@ ol.render.canvas.PolygonReplay.prototype.drawPolygonGeometry =
   }
   ol.extent.extend(this.extent_, polygonGeometry.getExtent());
   this.setFillStrokeStyles_();
-  this.beginGeometry(polygonGeometry, goog.getUid(data));
+  this.beginGeometry(polygonGeometry, data);
   // always fill the polygon for hit detection
   this.hitDetectionInstructions.push(
       [ol.render.canvas.Instruction.SET_FILL_STYLE,
@@ -1317,7 +1340,7 @@ ol.render.canvas.PolygonReplay.prototype.drawMultiPolygonGeometry =
   }
   ol.extent.extend(this.extent_, multiPolygonGeometry.getExtent());
   this.setFillStrokeStyles_();
-  this.beginGeometry(multiPolygonGeometry, goog.getUid(data));
+  this.beginGeometry(multiPolygonGeometry, data);
   // always fill the multi-polygon for hit detection
   this.hitDetectionInstructions.push(
       [ol.render.canvas.Instruction.SET_FILL_STYLE,
@@ -1569,7 +1592,7 @@ ol.render.canvas.TextReplay.prototype.drawText =
     this.setReplayStrokeState_(this.textStrokeState_);
   }
   this.setReplayTextState_(this.textState_);
-  this.beginGeometry(geometry, goog.getUid(data));
+  this.beginGeometry(geometry, data);
   var myBegin = this.coordinates.length;
   var myEnd =
       this.appendFlatCoordinates(flatCoordinates, offset, end, stride, false);
@@ -1629,7 +1652,7 @@ ol.render.canvas.TextReplay.prototype.setReplayStrokeState_ =
   var setStrokeStyleInstruction = [
     ol.render.canvas.Instruction.SET_STROKE_STYLE, strokeState.strokeStyle,
     strokeState.lineWidth, strokeState.lineCap, strokeState.lineJoin,
-    strokeState.miterLimit, strokeState.lineDash
+    strokeState.miterLimit, strokeState.lineDash, false
   ];
   this.instructions.push(setStrokeStyleInstruction);
   this.hitDetectionInstructions.push(setStrokeStyleInstruction);
@@ -1910,7 +1933,8 @@ ol.render.canvas.ReplayGroup.prototype.replay_ = function(
   var maxX = maxExtent[2];
   var maxY = maxExtent[3];
   var flatClipCoords = ol.geom.flat.transform.transform2D(
-      [minX, minY, minX, maxY, maxX, maxY, maxX, minY], 2, transform);
+      [minX, minY, minX, maxY, maxX, maxY, maxX, minY],
+      0, 8, 2, transform);
   context.save();
   context.beginPath();
   context.moveTo(flatClipCoords[0], flatClipCoords[1]);

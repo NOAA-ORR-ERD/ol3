@@ -20,16 +20,19 @@ goog.require('ol.xml');
 
 
 /**
+ * @classdesc
+ * Abstract base class; normally only used for creating subclasses and not
+ * instantiated in apps.
+ * Base class for vector sources in one of the supported formats.
+ *
  * @constructor
  * @extends {ol.source.Vector}
  * @param {olx.source.FormatVectorOptions} options Options.
- * @todo stability experimental
  */
 ol.source.FormatVector = function(options) {
 
   goog.base(this, {
     attributions: options.attributions,
-    extent: options.extent,
     logo: options.logo,
     projection: options.projection
   });
@@ -112,21 +115,22 @@ ol.source.FormatVector.prototype.loadFeaturesFromURL =
 /**
  * @param {ArrayBuffer|Document|Node|Object|string} source Source.
  * @return {Array.<ol.Feature>} Features.
+ * @api
  */
 ol.source.FormatVector.prototype.readFeatures = function(source) {
   var format = this.format;
   var features = format.readFeatures(source);
   var featureProjection = format.readProjection(source);
   var projection = this.getProjection();
-  if (!goog.isNull(projection)) {
+  if (!goog.isNull(projection) && !goog.isNull(featureProjection)) {
     if (!ol.proj.equivalent(featureProjection, projection)) {
       var transform = ol.proj.getTransform(featureProjection, projection);
       var i, ii;
       for (i = 0, ii = features.length; i < ii; ++i) {
         var feature = features[i];
         var geometry = feature.getGeometry();
-        if (!goog.isNull(geometry)) {
-          geometry.transform(transform);
+        if (goog.isDefAndNotNull(geometry)) {
+          geometry.applyTransform(transform);
         }
       }
     }

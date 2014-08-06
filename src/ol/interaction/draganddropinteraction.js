@@ -3,7 +3,6 @@
 goog.provide('ol.interaction.DragAndDrop');
 goog.provide('ol.interaction.DragAndDropEvent');
 
-goog.require('goog.array');
 goog.require('goog.asserts');
 goog.require('goog.events');
 goog.require('goog.events.Event');
@@ -17,11 +16,14 @@ goog.require('ol.proj');
 
 
 /**
+ * @classdesc
+ * Handles input of vector data by drag and drop.
+ *
  * @constructor
  * @extends {ol.interaction.Interaction}
- * @fires {@link ol.interaction.DragAndDropEvent}
- *     ol.interaction.DragAndDropEvent
+ * @fires ol.interaction.DragAndDropEvent
  * @param {olx.interaction.DragAndDropOptions=} opt_options Options.
+ * @api stable
  */
 ol.interaction.DragAndDrop = function(opt_options) {
 
@@ -99,7 +101,7 @@ ol.interaction.DragAndDrop.prototype.handleResult_ = function(file, result) {
   if (goog.isNull(projection)) {
     var view = map.getView();
     goog.asserts.assert(goog.isDef(view));
-    projection = view.getView2D().getProjection();
+    projection = view.getProjection();
     goog.asserts.assert(goog.isDef(projection));
   }
   var formatConstructors = this.formatConstructors_;
@@ -116,8 +118,8 @@ ol.interaction.DragAndDrop.prototype.handleResult_ = function(file, result) {
       for (j = 0, jj = readFeatures.length; j < jj; ++j) {
         var feature = readFeatures[j];
         var geometry = feature.getGeometry();
-        if (!goog.isNull(geometry)) {
-          geometry.transform(transform);
+        if (goog.isDefAndNotNull(geometry)) {
+          geometry.applyTransform(transform);
         }
         features.push(feature);
       }
@@ -182,7 +184,7 @@ ol.interaction.DragAndDropEventType = {
   /**
    * Triggered when features are added
    * @event ol.interaction.DragAndDropEvent#addfeatures
-   * @todo stability experimental
+   * @api stable
    */
   ADD_FEATURES: 'addfeatures'
 };
@@ -206,19 +208,19 @@ ol.interaction.DragAndDropEvent =
 
   /**
    * @type {Array.<ol.Feature>|undefined}
-   * @todo stability experimental
+   * @api stable
    */
   this.features = opt_features;
 
   /**
    * @type {File}
-   * @todo stability experimental
+   * @api stable
    */
   this.file = file;
 
   /**
    * @type {ol.proj.Projection|undefined}
-   * @todo stability experimental
+   * @api
    */
   this.projection = opt_projection;
 

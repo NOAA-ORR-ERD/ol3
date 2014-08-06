@@ -16,8 +16,13 @@ goog.require('ol.xml');
 
 
 /**
+ * @classdesc
+ * Feature format for reading data in the
+ * [OSMXML format](http://wiki.openstreetmap.org/wiki/OSM_XML).
+ *
  * @constructor
  * @extends {ol.format.XMLFeature}
+ * @api
  */
 ol.format.OSMXML = function() {
   goog.base(this);
@@ -64,7 +69,7 @@ ol.format.OSMXML.readNode_ = function(node, objectStack) {
     var geometry = new ol.geom.Point(coordinates);
     var feature = new ol.Feature(geometry);
     feature.setId(id);
-    feature.setValues(values.tags);
+    feature.setProperties(values.tags);
     state.features.push(feature);
   }
 };
@@ -101,7 +106,7 @@ ol.format.OSMXML.readWay_ = function(node, objectStack) {
   }
   var feature = new ol.Feature(geometry);
   feature.setId(id);
-  feature.setValues(values.tags);
+  feature.setProperties(values.tags);
   state.features.push(feature);
 };
 
@@ -180,6 +185,17 @@ ol.format.OSMXML.NODE_PARSERS_ = ol.xml.makeParsersNS(
 
 
 /**
+ * Read all features from an OSM source.
+ *
+ * @function
+ * @param {ArrayBuffer|Document|Node|Object|string} source Source.
+ * @return {Array.<ol.Feature>} Features.
+ * @api
+ */
+ol.format.OSMXML.prototype.readFeatures;
+
+
+/**
  * @inheritDoc
  */
 ol.format.OSMXML.prototype.readFeaturesFromNode = function(node) {
@@ -195,6 +211,17 @@ ol.format.OSMXML.prototype.readFeaturesFromNode = function(node) {
   }
   return [];
 };
+
+
+/**
+ * Read the projection from an OSM source.
+ *
+ * @function
+ * @param {ArrayBuffer|Document|Node|Object|string} source Source.
+ * @return {ol.proj.Projection} Projection.
+ * @api
+ */
+ol.format.OSMXML.prototype.readProjection;
 
 
 /**

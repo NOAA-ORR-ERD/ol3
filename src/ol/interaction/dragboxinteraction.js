@@ -1,22 +1,15 @@
 // FIXME draw drag box
-// FIXME works for View2D only
-
 goog.provide('ol.DragBoxEvent');
 goog.provide('ol.interaction.DragBox');
 
 goog.require('goog.asserts');
 goog.require('goog.events.Event');
 goog.require('goog.functions');
+goog.require('ol');
 goog.require('ol.events.ConditionType');
 goog.require('ol.events.condition');
 goog.require('ol.interaction.Pointer');
 goog.require('ol.render.Box');
-
-
-/**
- * @define {number} Hysterisis pixels.
- */
-ol.DRAG_BOX_HYSTERESIS_PIXELS = 8;
 
 
 /**
@@ -35,13 +28,13 @@ ol.DragBoxEventType = {
   /**
    * Triggered upon drag box start.
    * @event ol.DragBoxEvent#boxstart
-   * @todo stability experimental
+   * @api stable
    */
   BOXSTART: 'boxstart',
   /**
    * Triggered upon drag box end.
-   * @event ol.DragBoxEvent#boxstart
-   * @todo stability experimental
+   * @event ol.DragBoxEvent#boxend
+   * @api stable
    */
   BOXEND: 'boxend'
 };
@@ -49,6 +42,7 @@ ol.DragBoxEventType = {
 
 
 /**
+ * @classdesc
  * Object representing a dragbox event.
  *
  * @param {string} type The event type.
@@ -64,6 +58,7 @@ ol.DragBoxEvent = function(type, coordinate) {
    * The coordinate of the drag event.
    * @const
    * @type {ol.Coordinate}
+   * @api stable
    */
   this.coordinate = coordinate;
 
@@ -73,17 +68,21 @@ goog.inherits(ol.DragBoxEvent, goog.events.Event);
 
 
 /**
- * Allows the user to zoom the map by clicking and dragging on the map,
+ * @classdesc
+ * Allows the user to draw a vector box by clicking and dragging on the map,
  * normally combined with an {@link ol.events.condition} that limits
- * it to when the shift key is held down.
+ * it to when the shift or other key is held down. This is used, for example,
+ * for zooming to a specific area of the map
+ * (see {@link ol.interaction.DragZoom} and
+ * {@link ol.interaction.DragRotateAndZoom}).
  *
  * This interaction is only supported for mouse devices.
  *
  * @constructor
  * @extends {ol.interaction.Pointer}
- * @fires {@link ol.DragBoxEvent} ol.DragBoxEvent
+ * @fires ol.DragBoxEvent
  * @param {olx.interaction.DragBoxOptions=} opt_options Options.
- * @todo stability experimental
+ * @api stable
  */
 ol.interaction.DragBox = function(opt_options) {
 
@@ -135,6 +134,7 @@ ol.interaction.DragBox.prototype.handlePointerDrag = function(mapBrowserEvent) {
 /**
  * Returns geometry of last drawn box.
  * @return {ol.geom.Geometry} Geometry.
+ * @api stable
  */
 ol.interaction.DragBox.prototype.getGeometry = function() {
   return this.box_.getGeometry();
@@ -143,6 +143,7 @@ ol.interaction.DragBox.prototype.getGeometry = function() {
 
 /**
  * To be overriden by child classes.
+ * @param {ol.MapBrowserEvent} mapBrowserEvent Map browser event.
  * @protected
  */
 ol.interaction.DragBox.prototype.onBoxEnd = goog.nullFunction;
@@ -151,8 +152,7 @@ ol.interaction.DragBox.prototype.onBoxEnd = goog.nullFunction;
 /**
  * @inheritDoc
  */
-ol.interaction.DragBox.prototype.handlePointerUp =
-    function(mapBrowserEvent) {
+ol.interaction.DragBox.prototype.handlePointerUp = function(mapBrowserEvent) {
   if (!ol.events.condition.mouseOnly(mapBrowserEvent)) {
     return true;
   }
@@ -175,8 +175,7 @@ ol.interaction.DragBox.prototype.handlePointerUp =
 /**
  * @inheritDoc
  */
-ol.interaction.DragBox.prototype.handlePointerDown =
-    function(mapBrowserEvent) {
+ol.interaction.DragBox.prototype.handlePointerDown = function(mapBrowserEvent) {
   if (!ol.events.condition.mouseOnly(mapBrowserEvent)) {
     return false;
   }

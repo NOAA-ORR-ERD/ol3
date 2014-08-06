@@ -1,28 +1,27 @@
 goog.require('ol.BrowserFeature');
 goog.require('ol.Map');
-goog.require('ol.View2D');
+goog.require('ol.View');
+goog.require('ol.control');
 goog.require('ol.dom.Input');
 goog.require('ol.layer.Tile');
 goog.require('ol.source.OSM');
 
 
-if (!ol.BrowserFeature.HAS_WEBGL) {
-  var inputs = document.getElementsByClassName('webgl');
-  for (var i = 0, len = inputs.length; i < len; i++) {
-    inputs[i].disabled = true;
-  }
-  var info = document.getElementById('no-webgl');
-  /**
-   * display warning message
-   */
-  info.style.display = '';
+function checkWebGL(evt) {
+  document.getElementById('no-webgl').style.display =
+      ol.BrowserFeature.HAS_WEBGL ? 'none' : '';
+  document.getElementById('has-webgl').style.display =
+      ol.BrowserFeature.HAS_WEBGL && !evt.glContext ? '' : 'none';
+  document.getElementById('webgl').style.display =
+      evt.glContext ? '' : 'none';
 }
 
 var layer = new ol.layer.Tile({
   source: new ol.source.OSM()
 });
+layer.once('precompose', checkWebGL);
 
-var view = new ol.View2D({
+var view = new ol.View({
   center: [0, 0],
   zoom: 2
 });
@@ -31,6 +30,11 @@ var map = new ol.Map({
   layers: [layer],
   renderer: exampleNS.getRendererFromQueryString(),
   target: 'map',
+  controls: ol.control.defaults({
+    attributionOptions: /** @type {olx.control.AttributionOptions} */ ({
+      collapsible: false
+    })
+  }),
   view: view
 });
 

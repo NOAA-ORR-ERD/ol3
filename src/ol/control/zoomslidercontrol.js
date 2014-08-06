@@ -1,9 +1,7 @@
-// FIXME works for View2D only
 // FIXME should possibly show tooltip when dragging?
 
 goog.provide('ol.control.ZoomSlider');
 
-goog.require('goog.array');
 goog.require('goog.asserts');
 goog.require('goog.dom');
 goog.require('goog.dom.TagName');
@@ -15,20 +13,16 @@ goog.require('goog.fx.Dragger.EventType');
 goog.require('goog.math');
 goog.require('goog.math.Rect');
 goog.require('goog.style');
+goog.require('ol');
 goog.require('ol.animation');
 goog.require('ol.control.Control');
 goog.require('ol.css');
 goog.require('ol.easing');
 
 
-/**
- * @define {number} Animation duration.
- */
-ol.control.ZOOMSLIDER_ANIMATION_DURATION = 200;
-
-
 
 /**
+ * @classdesc
  * A slider type of control for zooming.
  *
  * Example:
@@ -38,7 +32,7 @@ ol.control.ZOOMSLIDER_ANIMATION_DURATION = 200;
  * @constructor
  * @extends {ol.control.Control}
  * @param {olx.control.ZoomSliderOptions=} opt_options Zoom slider options.
- * @todo stability experimental
+ * @api
  */
 ol.control.ZoomSlider = function(opt_options) {
 
@@ -164,11 +158,11 @@ ol.control.ZoomSlider.prototype.handleMapPostrender = function(mapEvent) {
     return;
   }
   goog.asserts.assert(
-      goog.isDefAndNotNull(mapEvent.frameState.view2DState));
+      goog.isDefAndNotNull(mapEvent.frameState.viewState));
   if (!this.sliderInitialized_) {
     this.initSlider_();
   }
-  var res = mapEvent.frameState.view2DState.resolution;
+  var res = mapEvent.frameState.viewState.resolution;
   if (res !== this.currentResolution_) {
     this.currentResolution_ = res;
     this.positionThumbForResolution_(res);
@@ -182,7 +176,7 @@ ol.control.ZoomSlider.prototype.handleMapPostrender = function(mapEvent) {
  */
 ol.control.ZoomSlider.prototype.handleContainerClick_ = function(browserEvent) {
   var map = this.getMap();
-  var view = map.getView().getView2D();
+  var view = map.getView();
   var resolution;
   var amountDragged = this.amountDragged_(browserEvent.offsetX,
       browserEvent.offsetY);
@@ -190,7 +184,7 @@ ol.control.ZoomSlider.prototype.handleContainerClick_ = function(browserEvent) {
   goog.asserts.assert(goog.isDef(resolution));
   map.beforeRender(ol.animation.zoom({
     resolution: resolution,
-    duration: ol.control.ZOOMSLIDER_ANIMATION_DURATION,
+    duration: ol.ZOOMSLIDER_ANIMATION_DURATION,
     easing: ol.easing.easeOut
   }));
   resolution = view.constrainResolution(resolution);
@@ -251,7 +245,7 @@ ol.control.ZoomSlider.prototype.amountDragged_ = function(x, y) {
 ol.control.ZoomSlider.prototype.resolutionForAmount_ = function(amount) {
   // FIXME do we really need this affine transform?
   amount = (goog.math.clamp(amount, 0, 1) - 1) * -1;
-  var fn = this.getMap().getView().getView2D().getResolutionForValueFunction();
+  var fn = this.getMap().getView().getResolutionForValueFunction();
   return fn(amount);
 };
 
@@ -265,7 +259,7 @@ ol.control.ZoomSlider.prototype.resolutionForAmount_ = function(amount) {
  * @private
  */
 ol.control.ZoomSlider.prototype.amountForResolution_ = function(res) {
-  var fn = this.getMap().getView().getView2D().getValueForResolutionFunction();
+  var fn = this.getMap().getView().getValueForResolutionFunction();
   var value = fn(res);
   // FIXME do we really need this affine transform?
   return (value - 1) * -1;
@@ -282,7 +276,7 @@ ol.control.ZoomSlider.prototype.amountForResolution_ = function(res) {
  */
 ol.control.ZoomSlider.prototype.handleSliderChange_ = function(e) {
   var map = this.getMap();
-  var view = map.getView().getView2D();
+  var view = map.getView();
   var resolution;
   if (e.type === goog.fx.Dragger.EventType.DRAG) {
     var amountDragged = this.amountDragged_(e.left, e.top);
@@ -295,7 +289,7 @@ ol.control.ZoomSlider.prototype.handleSliderChange_ = function(e) {
     goog.asserts.assert(goog.isDef(this.currentResolution_));
     map.beforeRender(ol.animation.zoom({
       resolution: this.currentResolution_,
-      duration: ol.control.ZOOMSLIDER_ANIMATION_DURATION,
+      duration: ol.ZOOMSLIDER_ANIMATION_DURATION,
       easing: ol.easing.easeOut
     }));
     resolution = view.constrainResolution(this.currentResolution_);

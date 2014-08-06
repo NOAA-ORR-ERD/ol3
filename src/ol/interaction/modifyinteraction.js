@@ -37,9 +37,13 @@ ol.interaction.SegmentDataType;
 
 
 /**
+ * @classdesc
+ * Interaction for modifying vector data.
+ *
  * @constructor
  * @extends {ol.interaction.Pointer}
  * @param {olx.interaction.ModifyOptions} options Options.
+ * @api stable
  */
 ol.interaction.Modify = function(options) {
 
@@ -129,7 +133,7 @@ ol.interaction.Modify = function(options) {
   };
 
   /**
-   * @type {ol.Collection}
+   * @type {ol.Collection.<ol.Feature>}
    * @private
    */
   this.features_ = options.features;
@@ -395,11 +399,7 @@ ol.interaction.Modify.prototype.handlePointerDown = function(evt) {
     var geometry =  /** @type {ol.geom.Point} */ (vertexFeature.getGeometry());
     var vertex = geometry.getCoordinates();
     var vertexExtent = ol.extent.boundingExtent([vertex]);
-    var segmentDataMatches = [];
-    this.rBush_.forEachInExtent(vertexExtent,
-        function(segmentData) {
-          segmentDataMatches.push(segmentData);
-        });
+    var segmentDataMatches = this.rBush_.getInExtent(vertexExtent);
     var distinctFeatures = {};
     for (var i = 0, ii = segmentDataMatches.length; i < ii; ++i) {
       var segmentDataMatch = segmentDataMatches[i];
@@ -769,7 +769,7 @@ ol.interaction.Modify.prototype.updateSegmentIndices_ = function(
 
 
 /**
- * @return {ol.feature.StyleFunction} Styles.
+ * @return {ol.style.StyleFunction} Styles.
  */
 ol.interaction.Modify.getDefaultStyleFunction = function() {
   var style = ol.feature.createDefaultEditingStyles();

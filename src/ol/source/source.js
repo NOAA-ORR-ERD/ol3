@@ -9,32 +9,37 @@ goog.require('ol.proj');
 
 
 /**
- * @enum {number}
+ * State of the source, one of 'loading', 'ready' or 'error'.
+ * @enum {string}
+ * @api
  */
 ol.source.State = {
-  LOADING: 0,
-  READY: 1,
-  ERROR: 2
+  LOADING: 'loading',
+  READY: 'ready',
+  ERROR: 'error'
 };
 
 
 /**
  * @typedef {{attributions: (Array.<ol.Attribution>|undefined),
- *            extent: (ol.Extent|undefined),
- *            logo: (string|undefined),
+ *            logo: (string|olx.LogoOptions|undefined),
  *            projection: ol.proj.ProjectionLike,
  *            state: (ol.source.State|string|undefined)}}
- * @todo stability experimental
  */
 ol.source.SourceOptions;
 
 
 
 /**
+ * @classdesc
+ * Abstract base class; normally only used for creating subclasses and not
+ * instantiated in apps.
+ * Base class for {@link ol.layer.Layer} sources.
+ *
  * @constructor
  * @extends {ol.Observable}
+ * @fires change Triggered when the state of the source changes.
  * @param {ol.source.SourceOptions} options Source options.
- * @todo stability experimental
  */
 ol.source.Source = function(options) {
 
@@ -48,14 +53,6 @@ ol.source.Source = function(options) {
 
   /**
    * @private
-   * @type {ol.Extent}
-   */
-  this.extent_ = goog.isDef(options.extent) ?
-      options.extent : goog.isDef(options.projection) ?
-          this.projection_.getExtent() : null;
-
-  /**
-   * @private
    * @type {Array.<ol.Attribution>}
    */
   this.attributions_ = goog.isDef(options.attributions) ?
@@ -63,7 +60,7 @@ ol.source.Source = function(options) {
 
   /**
    * @private
-   * @type {string|undefined}
+   * @type {string|olx.LogoOptions|undefined}
    */
   this.logo_ = options.logo;
 
@@ -83,6 +80,7 @@ goog.inherits(ol.source.Source, ol.Observable);
  * @param {number} resolution Resolution.
  * @param {number} rotation Rotation.
  * @param {ol.Coordinate} coordinate Coordinate.
+ * @param {Object.<string, boolean>} skippedFeatureUids Skipped feature uids.
  * @param {function(ol.Feature): T} callback Feature callback.
  * @return {T|undefined} Callback result.
  * @template T
@@ -100,15 +98,7 @@ ol.source.Source.prototype.getAttributions = function() {
 
 
 /**
- * @return {ol.Extent} Extent.
- */
-ol.source.Source.prototype.getExtent = function() {
-  return this.extent_;
-};
-
-
-/**
- * @return {string|undefined} Logo.
+ * @return {string|olx.LogoOptions|undefined} Logo.
  */
 ol.source.Source.prototype.getLogo = function() {
   return this.logo_;
@@ -131,6 +121,7 @@ ol.source.Source.prototype.getResolutions = goog.abstractMethod;
 
 /**
  * @return {ol.source.State} State.
+ * @api
  */
 ol.source.Source.prototype.getState = function() {
   return this.state_;
@@ -146,15 +137,7 @@ ol.source.Source.prototype.setAttributions = function(attributions) {
 
 
 /**
- * @param {ol.Extent} extent Extent.
- */
-ol.source.Source.prototype.setExtent = function(extent) {
-  this.extent_ = extent;
-};
-
-
-/**
- * @param {string|undefined} logo Logo.
+ * @param {string|olx.LogoOptions|undefined} logo Logo.
  */
 ol.source.Source.prototype.setLogo = function(logo) {
   this.logo_ = logo;

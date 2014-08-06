@@ -19,6 +19,14 @@ goog.require('ol.vec.Mat4');
 
 
 /**
+ * @classdesc
+ * A concrete subclass of {@link ol.render.IVectorContext} that implements
+ * direct rendering of features and geometries to an HTML5 Canvas context.
+ * Instances of this class are created internally by the library and
+ * provided to application code as vectorContext member of the
+ * {@link ol.render.Event} object associated with postcompose, precompose and
+ * render events emitted by layers and maps.
+ *
  * @constructor
  * @implements {ol.render.IVectorContext}
  * @param {CanvasRenderingContext2D} context Context.
@@ -130,6 +138,18 @@ ol.render.canvas.Immediate =
 
   /**
    * @private
+   * @type {number}
+   */
+  this.imageOriginX_ = 0;
+
+  /**
+   * @private
+   * @type {number}
+   */
+  this.imageOriginY_ = 0;
+
+  /**
+   * @private
    * @type {boolean}
    */
   this.imageRotateWithView_ = false;
@@ -236,7 +256,8 @@ ol.render.canvas.Immediate.prototype.drawImages_ =
   goog.asserts.assert(offset === 0);
   goog.asserts.assert(end == flatCoordinates.length);
   var pixelCoordinates = ol.geom.flat.transform.transform2D(
-      flatCoordinates, 2, this.transform_, this.pixelCoordinates_);
+      flatCoordinates, offset, end, 2, this.transform_,
+      this.pixelCoordinates_);
   var context = this.context_;
   var localTransform = this.tmpLocalTransform_;
   var alpha = context.globalAlpha;
@@ -269,7 +290,9 @@ ol.render.canvas.Immediate.prototype.drawImages_ =
           goog.vec.Mat4.getElement(localTransform, 0, 3),
           goog.vec.Mat4.getElement(localTransform, 1, 3));
     }
-    context.drawImage(this.image_, x, y, this.imageWidth_, this.imageHeight_);
+    context.drawImage(this.image_, this.imageOriginX_, this.imageOriginY_,
+        this.imageWidth_, this.imageHeight_, x, y,
+        this.imageWidth_, this.imageHeight_);
   }
   if (rotation !== 0 || this.imageScale_ != 1) {
     context.setTransform(1, 0, 0, 1, 0, 0);
@@ -302,7 +325,8 @@ ol.render.canvas.Immediate.prototype.drawText_ =
   goog.asserts.assert(offset === 0);
   goog.asserts.assert(end == flatCoordinates.length);
   var pixelCoordinates = ol.geom.flat.transform.transform2D(
-      flatCoordinates, stride, this.transform_, this.pixelCoordinates_);
+      flatCoordinates, offset, end, stride, this.transform_,
+      this.pixelCoordinates_);
   var context = this.context_;
   for (; offset < end; offset += stride) {
     var x = pixelCoordinates[offset] + this.textOffsetX_;
@@ -332,41 +356,47 @@ ol.render.canvas.Immediate.prototype.drawText_ =
 
 
 /**
- * @param {Array.<number>} pixelCoordinates Pixel coordinates.
+ * @param {Array.<number>} flatCoordinates Flat coordinates.
  * @param {number} offset Offset.
  * @param {number} end End.
+ * @param {number} stride Stride.
  * @param {boolean} close Close.
  * @private
  * @return {number} end End.
  */
 ol.render.canvas.Immediate.prototype.moveToLineTo_ =
-    function(pixelCoordinates, offset, end, close) {
+    function(flatCoordinates, offset, end, stride, close) {
   var context = this.context_;
-  context.moveTo(pixelCoordinates[offset], pixelCoordinates[offset + 1]);
+  var pixelCoordinates = ol.geom.flat.transform.transform2D(
+      flatCoordinates, offset, end, stride, this.transform_,
+      this.pixelCoordinates_);
+  context.moveTo(pixelCoordinates[0], pixelCoordinates[1]);
   var i;
-  for (i = offset + 2; i < end; i += 2) {
+  for (i = 2; i < pixelCoordinates.length; i += 2) {
     context.lineTo(pixelCoordinates[i], pixelCoordinates[i + 1]);
   }
   if (close) {
-    context.lineTo(pixelCoordinates[offset], pixelCoordinates[offset + 1]);
+    context.lineTo(pixelCoordinates[0], pixelCoordinates[1]);
   }
   return end;
 };
 
 
 /**
- * @param {Array.<number>} pixelCoordinates Pixel coordinates.
+ * @param {Array.<number>} flatCoordinates Flat coordinates.
  * @param {number} offset Offset.
  * @param {Array.<number>} ends Ends.
+ * @param {number} stride Stride.
  * @private
  * @return {number} End.
  */
 ol.render.canvas.Immediate.prototype.drawRings_ =
-    function(pixelCoordinates, offset, ends) {
+    function(flatCoordinates, offset, ends, stride) {
   var context = this.context_;
   var i, ii;
   for (i = 0, ii = ends.length; i < ii; ++i) {
-    offset = this.moveToLineTo_(pixelCoordinates, offset, ends[i], true);
+    offset = this.moveToLineTo_(
+        flatCoordinates, offset, ends[i], stride, true);
     context.closePath(); // FIXME is this needed here?
   }
   return offset;
@@ -380,6 +410,7 @@ ol.render.canvas.Immediate.prototype.drawRings_ =
  *
  * @param {number} zIndex Z index.
  * @param {function(ol.render.canvas.Immediate)} callback Callback.
+ * @api
  */
 ol.render.canvas.Immediate.prototype.drawAsync = function(zIndex, callback) {
   var zIndexKey = zIndex.toString();
@@ -398,7 +429,7 @@ ol.render.canvas.Immediate.prototype.drawAsync = function(zIndex, callback) {
  *
  * @param {ol.geom.Circle} circleGeometry Circle geometry.
  * @param {Object} data Opaque data object,
- * @todo stability experimental
+ * @api
  */
 ol.render.canvas.Immediate.prototype.drawCircleGeometry =
     function(circleGeometry, data) {
@@ -443,11 +474,11 @@ ol.render.canvas.Immediate.prototype.drawCircleGeometry =
  *
  * @param {ol.Feature} feature Feature.
  * @param {ol.style.Style} style Style.
- * @todo stability experimental
+ * @api
  */
 ol.render.canvas.Immediate.prototype.drawFeature = function(feature, style) {
   var geometry = feature.getGeometry();
-  if (goog.isNull(geometry) ||
+  if (!goog.isDefAndNotNull(geometry) ||
       !ol.extent.intersects(this.extent_, geometry.getExtent())) {
     return;
   }
@@ -460,7 +491,7 @@ ol.render.canvas.Immediate.prototype.drawFeature = function(feature, style) {
     render.setImageStyle(style.getImage());
     render.setTextStyle(style.getText());
     var renderGeometry =
-        ol.render.canvas.Immediate.GEOMETRY_RENDERES_[geometry.getType()];
+        ol.render.canvas.Immediate.GEOMETRY_RENDERERS_[geometry.getType()];
     goog.asserts.assert(goog.isDef(renderGeometry));
     renderGeometry.call(render, geometry, null);
   });
@@ -474,7 +505,6 @@ ol.render.canvas.Immediate.prototype.drawFeature = function(feature, style) {
  * @param {ol.geom.GeometryCollection} geometryCollectionGeometry Geometry
  *     collection.
  * @param {Object} data Opaque data object.
- * @todo stability experimental
  */
 ol.render.canvas.Immediate.prototype.drawGeometryCollectionGeometry =
     function(geometryCollectionGeometry, data) {
@@ -483,7 +513,7 @@ ol.render.canvas.Immediate.prototype.drawGeometryCollectionGeometry =
   for (i = 0, ii = geometries.length; i < ii; ++i) {
     var geometry = geometries[i];
     var geometryRenderer =
-        ol.render.canvas.Immediate.GEOMETRY_RENDERES_[geometry.getType()];
+        ol.render.canvas.Immediate.GEOMETRY_RENDERERS_[geometry.getType()];
     goog.asserts.assert(goog.isDef(geometryRenderer));
     geometryRenderer.call(this, geometry, data);
   }
@@ -496,7 +526,7 @@ ol.render.canvas.Immediate.prototype.drawGeometryCollectionGeometry =
  *
  * @param {ol.geom.Point} pointGeometry Point geometry.
  * @param {Object} data Opaque data object.
- * @todo stability experimental
+ * @api
  */
 ol.render.canvas.Immediate.prototype.drawPointGeometry =
     function(pointGeometry, data) {
@@ -517,7 +547,7 @@ ol.render.canvas.Immediate.prototype.drawPointGeometry =
  *
  * @param {ol.geom.MultiPoint} multiPointGeometry MultiPoint geometry.
  * @param {Object} data Opaque data object.
- * @todo stability experimental
+ * @api
  */
 ol.render.canvas.Immediate.prototype.drawMultiPointGeometry =
     function(multiPointGeometry, data) {
@@ -538,7 +568,7 @@ ol.render.canvas.Immediate.prototype.drawMultiPointGeometry =
  *
  * @param {ol.geom.LineString} lineStringGeometry Line string geometry.
  * @param {Object} data Opaque data object.
- * @todo stability experimental
+ * @api
  */
 ol.render.canvas.Immediate.prototype.drawLineStringGeometry =
     function(lineStringGeometry, data) {
@@ -547,11 +577,11 @@ ol.render.canvas.Immediate.prototype.drawLineStringGeometry =
   }
   if (!goog.isNull(this.strokeState_)) {
     this.setContextStrokeState_(this.strokeState_);
-    var pixelCoordinates = ol.geom.transformSimpleGeometry2D(
-        lineStringGeometry, this.transform_, this.pixelCoordinates_);
     var context = this.context_;
+    var flatCoordinates = lineStringGeometry.getFlatCoordinates();
     context.beginPath();
-    this.moveToLineTo_(pixelCoordinates, 0, pixelCoordinates.length, false);
+    this.moveToLineTo_(flatCoordinates, 0, flatCoordinates.length,
+        lineStringGeometry.getStride(), false);
     context.stroke();
   }
   if (this.text_ !== '') {
@@ -568,7 +598,7 @@ ol.render.canvas.Immediate.prototype.drawLineStringGeometry =
  * @param {ol.geom.MultiLineString} multiLineStringGeometry
  *     MultiLineString geometry.
  * @param {Object} data Opaque data object.
- * @todo stability experimental
+ * @api
  */
 ol.render.canvas.Immediate.prototype.drawMultiLineStringGeometry =
     function(multiLineStringGeometry, data) {
@@ -576,18 +606,18 @@ ol.render.canvas.Immediate.prototype.drawMultiLineStringGeometry =
   if (!ol.extent.intersects(this.extent_, geometryExtent)) {
     return;
   }
-  var pixelCoordinates;
   if (!goog.isNull(this.strokeState_)) {
     this.setContextStrokeState_(this.strokeState_);
-    pixelCoordinates = ol.geom.transformSimpleGeometry2D(
-        multiLineStringGeometry, this.transform_, this.pixelCoordinates_);
     var context = this.context_;
-    context.beginPath();
-    var ends = multiLineStringGeometry.getEnds();
+    var flatCoordinates = multiLineStringGeometry.getFlatCoordinates();
     var offset = 0;
+    var ends = multiLineStringGeometry.getEnds();
+    var stride = multiLineStringGeometry.getStride();
+    context.beginPath();
     var i, ii;
     for (i = 0, ii = ends.length; i < ii; ++i) {
-      offset = this.moveToLineTo_(pixelCoordinates, offset, ends[i], false);
+      offset = this.moveToLineTo_(
+          flatCoordinates, offset, ends[i], stride, false);
     }
     context.stroke();
   }
@@ -604,14 +634,13 @@ ol.render.canvas.Immediate.prototype.drawMultiLineStringGeometry =
  *
  * @param {ol.geom.Polygon} polygonGeometry Polygon geometry.
  * @param {Object} data Opaque data object.
- * @todo stability experimental
+ * @api
  */
 ol.render.canvas.Immediate.prototype.drawPolygonGeometry =
     function(polygonGeometry, data) {
   if (!ol.extent.intersects(this.extent_, polygonGeometry.getExtent())) {
     return;
   }
-  var pixelCoordinates;
   if (!goog.isNull(this.strokeState_) || !goog.isNull(this.fillState_)) {
     if (!goog.isNull(this.fillState_)) {
       this.setContextFillState_(this.fillState_);
@@ -619,11 +648,10 @@ ol.render.canvas.Immediate.prototype.drawPolygonGeometry =
     if (!goog.isNull(this.strokeState_)) {
       this.setContextStrokeState_(this.strokeState_);
     }
-    pixelCoordinates = ol.geom.transformSimpleGeometry2D(
-        polygonGeometry, this.transform_, this.pixelCoordinates_);
     var context = this.context_;
     context.beginPath();
-    this.drawRings_(pixelCoordinates, 0, polygonGeometry.getEnds());
+    this.drawRings_(polygonGeometry.getOrientedFlatCoordinates(),
+        0, polygonGeometry.getEnds(), polygonGeometry.getStride());
     if (!goog.isNull(this.fillState_)) {
       context.fill();
     }
@@ -643,14 +671,13 @@ ol.render.canvas.Immediate.prototype.drawPolygonGeometry =
  * uses the current style.
  * @param {ol.geom.MultiPolygon} multiPolygonGeometry MultiPolygon geometry.
  * @param {Object} data Opaque data object.
- * @todo stability experimental
+ * @api
  */
 ol.render.canvas.Immediate.prototype.drawMultiPolygonGeometry =
     function(multiPolygonGeometry, data) {
   if (!ol.extent.intersects(this.extent_, multiPolygonGeometry.getExtent())) {
     return;
   }
-  var pixelCoordinates;
   if (!goog.isNull(this.strokeState_) || !goog.isNull(this.fillState_)) {
     if (!goog.isNull(this.fillState_)) {
       this.setContextFillState_(this.fillState_);
@@ -658,16 +685,16 @@ ol.render.canvas.Immediate.prototype.drawMultiPolygonGeometry =
     if (!goog.isNull(this.strokeState_)) {
       this.setContextStrokeState_(this.strokeState_);
     }
-    pixelCoordinates = ol.geom.transformSimpleGeometry2D(
-        multiPolygonGeometry, this.transform_, this.pixelCoordinates_);
     var context = this.context_;
-    var endss = multiPolygonGeometry.getEndss();
+    var flatCoordinates = multiPolygonGeometry.getOrientedFlatCoordinates();
     var offset = 0;
+    var endss = multiPolygonGeometry.getEndss();
+    var stride = multiPolygonGeometry.getStride();
     var i, ii;
     for (i = 0, ii = endss.length; i < ii; ++i) {
       var ends = endss[i];
       context.beginPath();
-      offset = this.drawRings_(pixelCoordinates, offset, ends);
+      offset = this.drawRings_(flatCoordinates, offset, ends, stride);
       if (!goog.isNull(this.fillState_)) {
         context.fill();
       }
@@ -818,7 +845,7 @@ ol.render.canvas.Immediate.prototype.setContextTextState_ =
  *
  * @param {ol.style.Fill} fillStyle Fill style.
  * @param {ol.style.Stroke} strokeStyle Stroke style.
- * @todo stability experimental
+ * @api
  */
 ol.render.canvas.Immediate.prototype.setFillStrokeStyle =
     function(fillStyle, strokeStyle) {
@@ -863,7 +890,7 @@ ol.render.canvas.Immediate.prototype.setFillStrokeStyle =
  * the image style.
  *
  * @param {ol.style.Image} imageStyle Image style.
- * @todo stability experimental
+ * @api
  */
 ol.render.canvas.Immediate.prototype.setImageStyle = function(imageStyle) {
   if (goog.isNull(imageStyle)) {
@@ -872,26 +899,23 @@ ol.render.canvas.Immediate.prototype.setImageStyle = function(imageStyle) {
     var imageAnchor = imageStyle.getAnchor();
     // FIXME pixel ratio
     var imageImage = imageStyle.getImage(1);
-    var imageOpacity = imageStyle.getOpacity();
-    var imageRotateWithView = imageStyle.getRotateWithView();
-    var imageRotation = imageStyle.getRotation();
-    var imageScale = imageStyle.getScale();
+    var imageOrigin = imageStyle.getOrigin();
     var imageSize = imageStyle.getSize();
-    var imageSnapToPixel = imageStyle.getSnapToPixel();
     goog.asserts.assert(!goog.isNull(imageAnchor));
     goog.asserts.assert(!goog.isNull(imageImage));
+    goog.asserts.assert(!goog.isNull(imageOrigin));
     goog.asserts.assert(!goog.isNull(imageSize));
     this.imageAnchorX_ = imageAnchor[0];
     this.imageAnchorY_ = imageAnchor[1];
     this.imageHeight_ = imageSize[1];
     this.image_ = imageImage;
-    this.imageOpacity_ = goog.isDef(imageOpacity) ? imageOpacity : 1;
-    this.imageRotateWithView_ = goog.isDef(imageRotateWithView) ?
-        imageRotateWithView : false;
-    this.imageRotation_ = goog.isDef(imageRotation) ? imageRotation : 0;
-    this.imageScale_ = goog.isDef(imageScale) ? imageScale : 1;
-    this.imageSnapToPixel_ = goog.isDef(imageSnapToPixel) ?
-        imageSnapToPixel : false;
+    this.imageOpacity_ = imageStyle.getOpacity();
+    this.imageOriginX_ = imageOrigin[0];
+    this.imageOriginY_ = imageOrigin[1];
+    this.imageRotateWithView_ = imageStyle.getRotateWithView();
+    this.imageRotation_ = imageStyle.getRotation();
+    this.imageScale_ = imageStyle.getScale();
+    this.imageSnapToPixel_ = imageStyle.getSnapToPixel();
     this.imageWidth_ = imageSize[0];
   }
 };
@@ -902,7 +926,7 @@ ol.render.canvas.Immediate.prototype.setImageStyle = function(imageStyle) {
  * remove the text style.
  *
  * @param {ol.style.Text} textStyle Text style.
- * @todo stability experimental
+ * @api
  */
 ol.render.canvas.Immediate.prototype.setTextStyle = function(textStyle) {
   if (goog.isNull(textStyle)) {
@@ -935,8 +959,8 @@ ol.render.canvas.Immediate.prototype.setTextStyle = function(textStyle) {
             textStrokeStyleLineDash : ol.render.canvas.defaultLineDash,
         lineJoin: goog.isDef(textStrokeStyleLineJoin) ?
             textStrokeStyleLineJoin : ol.render.canvas.defaultLineJoin,
-        lineWidth: this.pixelRatio_ * (goog.isDef(textStrokeStyleWidth) ?
-            textStrokeStyleWidth : ol.render.canvas.defaultLineWidth),
+        lineWidth: goog.isDef(textStrokeStyleWidth) ?
+            textStrokeStyleWidth : ol.render.canvas.defaultLineWidth,
         miterLimit: goog.isDef(textStrokeStyleMiterLimit) ?
             textStrokeStyleMiterLimit : ol.render.canvas.defaultMiterLimit,
         strokeStyle: ol.color.asString(!goog.isNull(textStrokeStyleColor) ?
@@ -978,7 +1002,7 @@ ol.render.canvas.Immediate.prototype.setTextStyle = function(textStyle) {
  *                function(this: ol.render.canvas.Immediate, ol.geom.Geometry,
  *                         Object)>}
  */
-ol.render.canvas.Immediate.GEOMETRY_RENDERES_ = {
+ol.render.canvas.Immediate.GEOMETRY_RENDERERS_ = {
   'Point': ol.render.canvas.Immediate.prototype.drawPointGeometry,
   'LineString': ol.render.canvas.Immediate.prototype.drawLineStringGeometry,
   'Polygon': ol.render.canvas.Immediate.prototype.drawPolygonGeometry,

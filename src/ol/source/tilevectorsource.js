@@ -11,15 +11,19 @@ goog.require('ol.tilegrid.TileGrid');
 
 
 /**
+ * @classdesc
+ * A vector source in one of the supported formats, where the data is divided
+ * into tiles in a fixed grid pattern.
+ *
  * @constructor
  * @extends {ol.source.FormatVector}
  * @param {olx.source.TileVectorOptions} options Options.
+ * @api
  */
 ol.source.TileVector = function(options) {
 
   goog.base(this, {
     attributions: options.attributions,
-    extent: options.extent,
     format: options.format,
     logo: options.logo,
     projection: options.projection
@@ -43,9 +47,7 @@ ol.source.TileVector = function(options) {
    * @private
    * @type {ol.TileCoordTransformType}
    */
-  this.tileCoordTransform_ = tileGrid.createTileCoordTransform({
-    extent: options.extent
-  });
+  this.tileCoordTransform_ = tileGrid.createTileCoordTransform();
 
   /**
    * @private
@@ -229,7 +231,6 @@ ol.source.TileVector.prototype.setTileUrlFunction = function(tileUrlFunction) {
 
 /**
  * @param {string} url URL.
- * @todo stability experimental
  */
 ol.source.TileVector.prototype.setUrl = function(url) {
   this.setTileUrlFunction(ol.TileUrlFunction.createFromTemplates(

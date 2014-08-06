@@ -1,9 +1,8 @@
 goog.provide('ol.renderer.Layer');
 
 goog.require('goog.Disposable');
-goog.require('ol.Image');
+goog.require('goog.asserts');
 goog.require('ol.ImageState');
-goog.require('ol.Tile');
 goog.require('ol.TileRange');
 goog.require('ol.TileState');
 goog.require('ol.layer.Layer');
@@ -45,7 +44,7 @@ goog.inherits(ol.renderer.Layer, goog.Disposable);
 
 /**
  * @param {ol.Coordinate} coordinate Coordinate.
- * @param {oli.FrameState} frameState Frame state.
+ * @param {olx.FrameState} frameState Frame state.
  * @param {function(this: S, ol.Feature, ol.layer.Layer): T} callback Feature
  *     callback.
  * @param {S} thisArg Value to use as `this` when executing `callback`.
@@ -96,7 +95,7 @@ ol.renderer.Layer.prototype.handleImageChange = function(event) {
 
 
 /**
- * @param {oli.FrameState} frameState Frame state.
+ * @param {olx.FrameState} frameState Frame state.
  * @param {ol.layer.LayerState} layerState Layer state.
  */
 ol.renderer.Layer.prototype.prepareFrame = goog.abstractMethod;
@@ -114,7 +113,7 @@ ol.renderer.Layer.prototype.renderIfReadyAndVisible = function() {
 
 
 /**
- * @param {oli.FrameState} frameState Frame state.
+ * @param {olx.FrameState} frameState Frame state.
  * @param {ol.source.Tile} tileSource Tile source.
  * @protected
  */
@@ -126,7 +125,7 @@ ol.renderer.Layer.prototype.scheduleExpireCache =
             /**
              * @param {ol.source.Tile} tileSource Tile source.
              * @param {ol.Map} map Map.
-             * @param {oli.FrameState} frameState Frame state.
+             * @param {olx.FrameState} frameState Frame state.
              */
             function(tileSource, map, frameState) {
               var tileSourceKey = goog.getUid(tileSource).toString();
@@ -155,14 +154,20 @@ ol.renderer.Layer.prototype.updateAttributions =
 
 
 /**
- * @param {oli.FrameState} frameState Frame state.
+ * @param {olx.FrameState} frameState Frame state.
  * @param {ol.source.Source} source Source.
  * @protected
  */
 ol.renderer.Layer.prototype.updateLogos = function(frameState, source) {
   var logo = source.getLogo();
   if (goog.isDef(logo)) {
-    frameState.logos[logo] = '';
+    if (goog.isString(logo)) {
+      frameState.logos[logo] = '';
+    } else if (goog.isObject(logo)) {
+      goog.asserts.assertString(logo.href);
+      goog.asserts.assertString(logo.src);
+      frameState.logos[logo.src] = logo.href;
+    }
   }
 };
 
@@ -241,7 +246,7 @@ ol.renderer.Layer.prototype.snapCenterToPixel =
  * - registers idle tiles in frameState.wantedTiles so that they are not
  *   discarded by the tile queue
  * - enqueues missing tiles
- * @param {oli.FrameState} frameState Frame state.
+ * @param {olx.FrameState} frameState Frame state.
  * @param {ol.source.Tile} tileSource Tile source.
  * @param {ol.tilegrid.TileGrid} tileGrid Tile grid.
  * @param {number} pixelRatio Pixel ratio.

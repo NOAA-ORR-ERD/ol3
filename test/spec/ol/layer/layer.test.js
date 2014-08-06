@@ -56,6 +56,7 @@ describe('ol.layer.Layer', function() {
         saturation: 1,
         visible: true,
         sourceState: ol.source.State.READY,
+        extent: undefined,
         maxResolution: Infinity,
         minResolution: 0
       });
@@ -99,11 +100,61 @@ describe('ol.layer.Layer', function() {
         saturation: 5,
         visible: false,
         sourceState: ol.source.State.READY,
+        extent: undefined,
         maxResolution: 500,
         minResolution: 0.25
       });
 
       goog.dispose(layer);
+    });
+
+  });
+
+  describe('visibleAtResolution', function() {
+    var layer;
+
+    beforeEach(function() {
+      layer = new ol.layer.Layer({
+        source: new ol.source.Source({
+          projection: ol.proj.get('EPSG:4326')
+        })
+      });
+    });
+
+    afterEach(function() {
+      goog.dispose(layer);
+    });
+
+    it('returns false if layer is not visible', function() {
+      layer.setVisible(false);
+      layer.setMinResolution(3);
+      layer.setMaxResolution(5);
+      var layerState = layer.getLayerState();
+      expect(ol.layer.Layer.visibleAtResolution(layerState, 4)).to.be(false);
+    });
+
+    it('returns false if resolution lower than minResolution', function() {
+      layer.setVisible(true);
+      layer.setMinResolution(3);
+      layer.setMaxResolution(5);
+      var layerState = layer.getLayerState();
+      expect(ol.layer.Layer.visibleAtResolution(layerState, 2)).to.be(false);
+    });
+
+    it('returns false if resolution greater than maxResolution', function() {
+      layer.setVisible(true);
+      layer.setMinResolution(3);
+      layer.setMaxResolution(5);
+      var layerState = layer.getLayerState();
+      expect(ol.layer.Layer.visibleAtResolution(layerState, 6)).to.be(false);
+    });
+
+    it('returns true otherwise', function() {
+      layer.setVisible(true);
+      layer.setMinResolution(3);
+      layer.setMaxResolution(5);
+      var layerState = layer.getLayerState();
+      expect(ol.layer.Layer.visibleAtResolution(layerState, 4)).to.be(true);
     });
 
   });
@@ -142,6 +193,7 @@ describe('ol.layer.Layer', function() {
         saturation: 0.3,
         visible: false,
         sourceState: ol.source.State.READY,
+        extent: undefined,
         maxResolution: 500,
         minResolution: 0.25
       });
@@ -163,6 +215,7 @@ describe('ol.layer.Layer', function() {
         saturation: 0,
         visible: false,
         sourceState: ol.source.State.READY,
+        extent: undefined,
         maxResolution: Infinity,
         minResolution: 0
       });
@@ -182,6 +235,7 @@ describe('ol.layer.Layer', function() {
         saturation: 42,
         visible: true,
         sourceState: ol.source.State.READY,
+        extent: undefined,
         maxResolution: Infinity,
         minResolution: 0
       });

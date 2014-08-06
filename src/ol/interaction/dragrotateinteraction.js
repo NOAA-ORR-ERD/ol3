@@ -1,6 +1,7 @@
 goog.provide('ol.interaction.DragRotate');
 
 goog.require('goog.asserts');
+goog.require('ol');
 goog.require('ol.ViewHint');
 goog.require('ol.events.ConditionType');
 goog.require('ol.events.condition');
@@ -8,14 +9,9 @@ goog.require('ol.interaction.Interaction');
 goog.require('ol.interaction.Pointer');
 
 
-/**
- * @define {number} Animation duration.
- */
-ol.interaction.DRAGROTATE_ANIMATION_DURATION = 250;
-
-
 
 /**
+ * @classdesc
  * Allows the user to rotate the map by clicking and dragging on the map,
  * normally combined with an {@link ol.events.condition} that limits
  * it to when the alt and shift keys are held down.
@@ -25,6 +21,7 @@ ol.interaction.DRAGROTATE_ANIMATION_DURATION = 250;
  * @constructor
  * @extends {ol.interaction.Pointer}
  * @param {olx.interaction.DragRotateOptions=} opt_options Options.
+ * @api stable
  */
 ol.interaction.DragRotate = function(opt_options) {
 
@@ -65,12 +62,11 @@ ol.interaction.DragRotate.prototype.handlePointerDrag =
       Math.atan2(size[1] / 2 - offset[1], offset[0] - size[0] / 2);
   if (goog.isDef(this.lastAngle_)) {
     var delta = theta - this.lastAngle_;
-    // FIXME works for View2D only
-    var view = map.getView().getView2D();
-    var view2DState = view.getView2DState();
+    var view = map.getView();
+    var viewState = view.getState();
     map.render();
     ol.interaction.Interaction.rotateWithoutConstraints(
-        map, view, view2DState.rotation - delta);
+        map, view, viewState.rotation - delta);
   }
   this.lastAngle_ = theta;
 };
@@ -86,13 +82,11 @@ ol.interaction.DragRotate.prototype.handlePointerUp =
   }
 
   var map = mapBrowserEvent.map;
-  // FIXME works for View2D only
   var view = map.getView();
   view.setHint(ol.ViewHint.INTERACTING, -1);
-  var view2D = view.getView2D();
-  var view2DState = view2D.getView2DState();
-  ol.interaction.Interaction.rotate(map, view2D, view2DState.rotation,
-      undefined, ol.interaction.DRAGROTATE_ANIMATION_DURATION);
+  var viewState = view.getState();
+  ol.interaction.Interaction.rotate(map, view, viewState.rotation,
+      undefined, ol.DRAGROTATE_ANIMATION_DURATION);
   return false;
 };
 

@@ -4,7 +4,6 @@ goog.provide('ol.source.TileOptions');
 goog.require('goog.functions');
 goog.require('ol.Attribution');
 goog.require('ol.Extent');
-goog.require('ol.Tile');
 goog.require('ol.TileCoord');
 goog.require('ol.TileRange');
 goog.require('ol.source.Source');
@@ -14,21 +13,25 @@ goog.require('ol.tilegrid.TileGrid');
 /**
  * @typedef {{attributions: (Array.<ol.Attribution>|undefined),
  *            extent: (ol.Extent|undefined),
- *            logo: (string|undefined),
+ *            logo: (string|olx.LogoOptions|undefined),
  *            opaque: (boolean|undefined),
+ *            tilePixelRatio: (number|undefined),
  *            projection: ol.proj.ProjectionLike,
  *            tileGrid: (ol.tilegrid.TileGrid|undefined)}}
- * @todo stability experimental
  */
 ol.source.TileOptions;
 
 
 
 /**
+ * @classdesc
+ * Abstract base class; normally only used for creating subclasses and not
+ * instantiated in apps.
+ * Base class for sources providing images divided into a tile grid.
+ *
  * @constructor
  * @extends {ol.source.Source}
  * @param {ol.source.TileOptions} options Tile source options.
- * @todo stability experimental
  */
 ol.source.Tile = function(options) {
 
@@ -44,6 +47,13 @@ ol.source.Tile = function(options) {
    * @type {boolean}
    */
   this.opaque_ = goog.isDef(options.opaque) ? options.opaque : false;
+
+  /**
+   * @private
+   * @type {number}
+   */
+  this.tilePixelRatio_ = goog.isDef(options.tilePixelRatio) ?
+      options.tilePixelRatio : 1;
 
   /**
    * @protected
@@ -153,6 +163,7 @@ ol.source.Tile.prototype.getTile = goog.abstractMethod;
 
 /**
  * @return {ol.tilegrid.TileGrid} Tile grid.
+ * @api
  */
 ol.source.Tile.prototype.getTileGrid = function() {
   return this.tileGrid;
@@ -181,7 +192,7 @@ ol.source.Tile.prototype.getTileGridForProjection = function(projection) {
 ol.source.Tile.prototype.getTilePixelSize =
     function(z, pixelRatio, projection) {
   var tileGrid = this.getTileGridForProjection(projection);
-  return tileGrid.getTileSize(z);
+  return tileGrid.getTileSize(z) * this.tilePixelRatio_;
 };
 
 

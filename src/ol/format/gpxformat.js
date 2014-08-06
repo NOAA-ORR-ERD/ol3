@@ -1,5 +1,4 @@
 goog.provide('ol.format.GPX');
-goog.provide('ol.format.GPX.V1_1');
 
 goog.require('goog.array');
 goog.require('goog.asserts');
@@ -17,12 +16,25 @@ goog.require('ol.xml');
 
 
 /**
+ * @classdesc
+ * Feature format for reading and writing data in the GPX format.
+ *
  * @constructor
  * @extends {ol.format.XMLFeature}
- * @todo stability experimental
+ * @param {olx.format.GPXOptions=} opt_options Options.
+ * @api
  */
-ol.format.GPX = function() {
+ol.format.GPX = function(opt_options) {
+
+  var options = goog.isDef(opt_options) ? opt_options : {};
+
   goog.base(this);
+
+  /**
+   * @type {function(ol.Feature, Node)|undefined}
+   * @private
+   */
+  this.readExtensions_ = options.readExtensions;
 };
 goog.inherits(ol.format.GPX, ol.format.XMLFeature);
 
@@ -83,6 +95,19 @@ ol.format.GPX.parseLink_ = function(node, objectStack) {
     goog.object.set(values, 'link', href);
   }
   ol.xml.parse(ol.format.GPX.LINK_PARSERS_, node, objectStack);
+};
+
+
+/**
+ * @param {Node} node Node.
+ * @param {Array.<*>} objectStack Object stack.
+ * @private
+ */
+ol.format.GPX.parseExtensions_ = function(node, objectStack) {
+  goog.asserts.assert(node.nodeType == goog.dom.NodeType.ELEMENT);
+  goog.asserts.assert(node.localName == 'extensions');
+  var values = /** @type {Object} */ (objectStack[objectStack.length - 1]);
+  goog.object.set(values, 'extensionsNode_', node);
 };
 
 
@@ -162,7 +187,7 @@ ol.format.GPX.readRte_ = function(node, objectStack) {
   var geometry = new ol.geom.LineString(null);
   geometry.setFlatCoordinates(ol.geom.GeometryLayout.XYZM, flatCoordinates);
   var feature = new ol.Feature(geometry);
-  feature.setValues(values);
+  feature.setProperties(values);
   return feature;
 };
 
@@ -192,7 +217,7 @@ ol.format.GPX.readTrk_ = function(node, objectStack) {
   geometry.setFlatCoordinates(
       ol.geom.GeometryLayout.XYZM, flatCoordinates, ends);
   var feature = new ol.Feature(geometry);
-  feature.setValues(values);
+  feature.setProperties(values);
   return feature;
 };
 
@@ -215,7 +240,7 @@ ol.format.GPX.readWpt_ = function(node, objectStack) {
   var geometry = new ol.geom.Point(
       coordinates, ol.geom.GeometryLayout.XYZM);
   var feature = new ol.Feature(geometry);
-  feature.setValues(values);
+  feature.setProperties(values);
   return feature;
 };
 
@@ -273,6 +298,7 @@ ol.format.GPX.RTE_PARSERS_ = ol.xml.makeParsersNS(
       'link': ol.format.GPX.parseLink_,
       'number':
           ol.xml.makeObjectPropertySetter(ol.format.XSD.readNonNegativeInteger),
+      'extensions': ol.format.GPX.parseExtensions_,
       'type': ol.xml.makeObjectPropertySetter(ol.format.XSD.readString),
       'rtept': ol.format.GPX.parseRtePt_
     });
@@ -305,6 +331,7 @@ ol.format.GPX.TRK_PARSERS_ = ol.xml.makeParsersNS(
       'number':
           ol.xml.makeObjectPropertySetter(ol.format.XSD.readNonNegativeInteger),
       'type': ol.xml.makeObjectPropertySetter(ol.format.XSD.readString),
+      'extensions': ol.format.GPX.parseExtensions_,
       'trkseg': ol.format.GPX.parseTrkSeg_
     });
 
@@ -359,8 +386,28 @@ ol.format.GPX.WPT_PARSERS_ = ol.xml.makeParsersNS(
       'ageofdgpsdata':
           ol.xml.makeObjectPropertySetter(ol.format.XSD.readDecimal),
       'dgpsid':
-          ol.xml.makeObjectPropertySetter(ol.format.XSD.readNonNegativeInteger)
+          ol.xml.makeObjectPropertySetter(ol.format.XSD.readNonNegativeInteger),
+      'extensions': ol.format.GPX.parseExtensions_
     });
+
+
+/**
+ * @param {Array.<ol.Feature>} features
+ * @private
+ */
+ol.format.GPX.prototype.handleReadExtensions_ = function(features) {
+  if (goog.isNull(features)) {
+    features = [];
+  }
+  for (var i = 0, ii = features.length; i < ii; ++i) {
+    var feature = features[i];
+    if (goog.isDef(this.readExtensions_)) {
+      var extensionsNode = feature.get('extensionsNode_') || null;
+      this.readExtensions_(feature, extensionsNode);
+    }
+    feature.set('extensionsNode_', undefined);
+  }
+};
 
 
 /**
@@ -369,6 +416,7 @@ ol.format.GPX.WPT_PARSERS_ = ol.xml.makeParsersNS(
  * @function
  * @param {ArrayBuffer|Document|Node|Object|string} source Source.
  * @return {ol.Feature} Feature.
+ * @api
  */
 ol.format.GPX.prototype.readFeature;
 
@@ -378,8 +426,7 @@ ol.format.GPX.prototype.readFeature;
  */
 ol.format.GPX.prototype.readFeatureFromNode = function(node) {
   goog.asserts.assert(node.nodeType == goog.dom.NodeType.ELEMENT);
-  if (goog.array.indexOf(ol.format.GPX.NAMESPACE_URIS_, node.namespaceURI) ==
-      -1) {
+  if (!goog.array.contains(ol.format.GPX.NAMESPACE_URIS_, node.namespaceURI)) {
     return null;
   }
   var featureReader = ol.format.GPX.FEATURE_READER_[node.localName];
@@ -390,6 +437,7 @@ ol.format.GPX.prototype.readFeatureFromNode = function(node) {
   if (!goog.isDef(feature)) {
     return null;
   }
+  this.handleReadExtensions_([feature]);
   return feature;
 };
 
@@ -400,6 +448,7 @@ ol.format.GPX.prototype.readFeatureFromNode = function(node) {
  * @function
  * @param {ArrayBuffer|Document|Node|Object|string} source Source.
  * @return {Array.<ol.Feature>} Features.
+ * @api
  */
 ol.format.GPX.prototype.readFeatures;
 
@@ -409,8 +458,7 @@ ol.format.GPX.prototype.readFeatures;
  */
 ol.format.GPX.prototype.readFeaturesFromNode = function(node) {
   goog.asserts.assert(node.nodeType == goog.dom.NodeType.ELEMENT);
-  if (goog.array.indexOf(ol.format.GPX.NAMESPACE_URIS_, node.namespaceURI) ==
-      -1) {
+  if (!goog.array.contains(ol.format.GPX.NAMESPACE_URIS_, node.namespaceURI)) {
     return [];
   }
   if (node.localName == 'gpx') {
@@ -418,6 +466,7 @@ ol.format.GPX.prototype.readFeaturesFromNode = function(node) {
         /** @type {Array.<ol.Feature>} */ ([]), ol.format.GPX.GPX_PARSERS_,
         node, []);
     if (goog.isDef(features)) {
+      this.handleReadExtensions_(features);
       return features;
     } else {
       return [];
@@ -430,8 +479,10 @@ ol.format.GPX.prototype.readFeaturesFromNode = function(node) {
 /**
  * Read the projection from a GPX source.
  *
+ * @function
  * @param {ArrayBuffer|Document|Node|Object|string} source Source.
  * @return {ol.proj.Projection} Projection.
+ * @api
  */
 ol.format.GPX.prototype.readProjection;
 
@@ -789,24 +840,13 @@ ol.format.GPX.GPX_SERIALIZERS_ = ol.xml.makeStructureNS(
     });
 
 
-
-/**
- * @constructor
- * @extends {ol.format.GPX}
- * @todo stability experimental
- */
-ol.format.GPX.V1_1 = function() {
-  goog.base(this);
-};
-goog.inherits(ol.format.GPX.V1_1, ol.format.GPX);
-
-
 /**
  * Encode an array of features in the GPX format.
  *
  * @function
  * @param {Array.<ol.Feature>} features Features.
- * @return {ArrayBuffer|Node|Object|string} Result.
+ * @return {Node} Result.
+ * @api
  */
 ol.format.GPX.prototype.writeFeatures;
 
@@ -814,7 +854,7 @@ ol.format.GPX.prototype.writeFeatures;
 /**
  * @inheritDoc
  */
-ol.format.GPX.V1_1.prototype.writeFeaturesNode = function(features) {
+ol.format.GPX.prototype.writeFeaturesNode = function(features) {
   //FIXME Serialize metadata
   var gpx = ol.xml.createElementNS('http://www.topografix.com/GPX/1/1', 'gpx');
   ol.xml.pushSerializeAndPop(/** @type {ol.xml.NodeStackItem} */

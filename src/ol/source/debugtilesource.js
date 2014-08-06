@@ -74,15 +74,21 @@ ol.DebugTile_.prototype.getImage = function(opt_context) {
 
 
 /**
+ * @classdesc
+ * A pseudo tile source, which does not fetch tiles from a server, but renders
+ * a grid outline for the tile grid/projection along with the coordinates for
+ * each tile. See examples/canvas-tiles for an example.
+ *
+ * Uses Canvas context2d, so requires Canvas support.
+ *
  * @constructor
  * @extends {ol.source.Tile}
  * @param {olx.source.TileDebugOptions} options Debug tile options.
- * @todo stability experimental
+ * @api
  */
 ol.source.TileDebug = function(options) {
 
   goog.base(this, {
-    extent: options.extent,
     opaque: false,
     projection: options.projection,
     tileGrid: options.tileGrid

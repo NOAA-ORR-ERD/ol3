@@ -7,6 +7,7 @@ goog.require('goog.vec.Mat4');
 goog.require('ol.ImageBase');
 goog.require('ol.ImageState');
 goog.require('ol.ViewHint');
+goog.require('ol.extent');
 goog.require('ol.layer.Image');
 goog.require('ol.renderer.Map');
 goog.require('ol.renderer.canvas.Layer');
@@ -50,9 +51,11 @@ ol.renderer.canvas.ImageLayer.prototype.forEachFeatureAtPixel =
   var source = layer.getSource();
   goog.asserts.assertInstanceof(source, ol.source.Image);
   var extent = frameState.extent;
-  var resolution = frameState.view2DState.resolution;
-  var rotation = frameState.view2DState.rotation;
-  return source.forEachFeatureAtPixel(extent, resolution, rotation, coordinate,
+  var resolution = frameState.viewState.resolution;
+  var rotation = frameState.viewState.rotation;
+  var skippedFeatureUids = frameState.skippedFeatureUids;
+  return source.forEachFeatureAtPixel(
+      extent, resolution, rotation, coordinate, skippedFeatureUids,
       /**
        * @param {ol.Feature} feature Feature.
        * @return {?} Callback result.
@@ -87,10 +90,10 @@ ol.renderer.canvas.ImageLayer.prototype.prepareFrame =
     function(frameState, layerState) {
 
   var pixelRatio = frameState.pixelRatio;
-  var view2DState = frameState.view2DState;
-  var viewCenter = view2DState.center;
-  var viewResolution = view2DState.resolution;
-  var viewRotation = view2DState.rotation;
+  var viewState = frameState.viewState;
+  var viewCenter = viewState.center;
+  var viewResolution = viewState.resolution;
+  var viewRotation = viewState.rotation;
 
   var image;
   var imageLayer = this.getLayer();
@@ -100,9 +103,16 @@ ol.renderer.canvas.ImageLayer.prototype.prepareFrame =
 
   var hints = frameState.viewHints;
 
-  if (!hints[ol.ViewHint.ANIMATING] && !hints[ol.ViewHint.INTERACTING]) {
+  var renderedExtent = frameState.extent;
+  if (goog.isDef(layerState.extent)) {
+    renderedExtent = ol.extent.getIntersection(
+        renderedExtent, layerState.extent);
+  }
+
+  if (!hints[ol.ViewHint.ANIMATING] && !hints[ol.ViewHint.INTERACTING] &&
+      !ol.extent.isEmpty(renderedExtent)) {
     image = imageSource.getImage(
-        frameState.extent, viewResolution, pixelRatio, view2DState.projection);
+        renderedExtent, viewResolution, pixelRatio, viewState.projection);
     if (!goog.isNull(image)) {
       var imageState = image.getState();
       if (imageState == ol.ImageState.IDLE) {

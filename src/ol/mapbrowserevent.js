@@ -10,6 +10,7 @@ goog.require('goog.events.BrowserEvent');
 goog.require('goog.events.EventTarget');
 goog.require('goog.events.EventType');
 goog.require('goog.object');
+goog.require('ol');
 goog.require('ol.Coordinate');
 goog.require('ol.MapEvent');
 goog.require('ol.Pixel');
@@ -25,8 +26,7 @@ goog.require('ol.pointer.PointerEventHandler');
  * @param {string} type Event type.
  * @param {ol.Map} map Map.
  * @param {goog.events.BrowserEvent} browserEvent Browser event.
- * @param {?oli.FrameState=} opt_frameState Frame state.
- * @todo stability experimental
+ * @param {?olx.FrameState=} opt_frameState Frame state.
  */
 ol.MapBrowserEvent = function(type, map, browserEvent, opt_frameState) {
 
@@ -41,21 +41,21 @@ ol.MapBrowserEvent = function(type, map, browserEvent, opt_frameState) {
   /**
    * @const
    * @type {Event}
-   * @todo stability experimental
+   * @api
    */
   this.originalEvent = browserEvent.getBrowserEvent();
 
   /**
-   * @type {ol.Coordinate}
-   * @todo stability experimental
-   */
-  this.coordinate = map.getEventCoordinate(this.originalEvent);
-
-  /**
    * @type {ol.Pixel}
-   * @todo stability experimental
+   * @api
    */
   this.pixel = map.getEventPixel(this.originalEvent);
+
+  /**
+   * @type {ol.Coordinate}
+   * @api
+   */
+  this.coordinate = map.getCoordinateFromPixel(this.pixel);
 
 };
 goog.inherits(ol.MapBrowserEvent, ol.MapEvent);
@@ -65,7 +65,7 @@ goog.inherits(ol.MapBrowserEvent, ol.MapEvent);
  * Prevents the default browser action.
  * @see https://developer.mozilla.org/en-US/docs/Web/API/event.preventDefault
  * @override
- * @todo stability experimental
+ * @api
  */
 ol.MapBrowserEvent.prototype.preventDefault = function() {
   goog.base(this, 'preventDefault');
@@ -77,7 +77,7 @@ ol.MapBrowserEvent.prototype.preventDefault = function() {
  * Prevents further propagation of the current event.
  * @see https://developer.mozilla.org/en-US/docs/Web/API/event.stopPropagation
  * @override
- * @todo stability experimental
+ * @api
  */
 ol.MapBrowserEvent.prototype.stopPropagation = function() {
   goog.base(this, 'stopPropagation');
@@ -92,8 +92,7 @@ ol.MapBrowserEvent.prototype.stopPropagation = function() {
  * @param {string} type Event type.
  * @param {ol.Map} map Map.
  * @param {ol.pointer.PointerEvent} pointerEvent Pointer event.
- * @param {?oli.FrameState=} opt_frameState Frame state.
- * @todo stability experimental
+ * @param {?olx.FrameState=} opt_frameState Frame state.
  */
 ol.MapBrowserPointerEvent = function(type, map, pointerEvent, opt_frameState) {
 
@@ -471,33 +470,34 @@ ol.MapBrowserEvent.EventType = {
    * A true single click with no dragging and no double click. Note that this
    * event is delayed by 250 ms to ensure that it is not a double click.
    * @event ol.MapBrowserEvent#singleclick
-   * @todo stability experimental
+   * @api
    */
   SINGLECLICK: 'singleclick',
   /**
    * A click with no dragging. A double click will fire two of this.
    * @event ol.MapBrowserEvent#click
-   * @todo stability experimental
+   * @api
    */
   CLICK: goog.events.EventType.CLICK,
   /**
    * A true double click, with no dragging.
    * @event ol.MapBrowserEvent#dblclick
-   * @todo stability experimental
+   * @api
    */
   DBLCLICK: goog.events.EventType.DBLCLICK,
   /**
    * Triggered when a pointer is dragged.
    * @event ol.MapBrowserEvent#pointerdrag
-   * @todo stability experimental
+   * @api
    */
   POINTERDRAG: 'pointerdrag',
 
   // original pointer event types
   /**
-   * Triggered when a pointer is moved.
+   * Triggered when a pointer is moved. Note that on touch devices this is
+   * triggered when the map is panned, so is not the same as mousemove.
    * @event ol.MapBrowserEvent#pointermove
-   * @todo stability experimental
+   * @api
    */
   POINTERMOVE: 'pointermove',
   POINTERDOWN: 'pointerdown',

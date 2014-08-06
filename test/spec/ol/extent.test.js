@@ -24,6 +24,30 @@ describe('ol.extent', function() {
 
   });
 
+  describe('getIntersection()', function() {
+    it('returns the intersection of two extents', function() {
+      var world = [-180, -90, 180, 90];
+      var north = [-180, 0, 180, 90];
+      var farNorth = [-180, 45, 180, 90];
+      var east = [0, -90, 180, 90];
+      var farEast = [90, -90, 180, 90];
+      var south = [-180, -90, 180, 0];
+      var farSouth = [-180, -90, 180, -45];
+      var west = [-180, -90, 0, 90];
+      var farWest = [-180, -90, -90, 90];
+      var none = ol.extent.createEmpty();
+      expect(ol.extent.getIntersection(world, none)).to.eql(none);
+      expect(ol.extent.getIntersection(world, north)).to.eql(north);
+      expect(ol.extent.getIntersection(world, east)).to.eql(east);
+      expect(ol.extent.getIntersection(world, south)).to.eql(south);
+      expect(ol.extent.getIntersection(world, west)).to.eql(west);
+      expect(ol.extent.getIntersection(farEast, farWest)).to.eql(none);
+      expect(ol.extent.getIntersection(farNorth, farSouth)).to.eql(none);
+      expect(ol.extent.getIntersection(north, west)).to.eql([-180, 0, 0, 90]);
+      expect(ol.extent.getIntersection(east, south)).to.eql([0, -90, 180, 0]);
+    });
+  });
+
   describe('containsCoordinate', function() {
 
     describe('positive', function() {
@@ -153,10 +177,10 @@ describe('ol.extent', function() {
     });
   });
 
-  describe('getForView2DAndSize', function() {
+  describe('getForViewAndSize', function() {
 
     it('works for a unit square', function() {
-      var extent = ol.extent.getForView2DAndSize(
+      var extent = ol.extent.getForViewAndSize(
           [0, 0], 1, 0, [1, 1]);
       expect(extent[0]).to.be(-0.5);
       expect(extent[2]).to.be(0.5);
@@ -165,7 +189,7 @@ describe('ol.extent', function() {
     });
 
     it('works for center', function() {
-      var extent = ol.extent.getForView2DAndSize(
+      var extent = ol.extent.getForViewAndSize(
           [5, 10], 1, 0, [1, 1]);
       expect(extent[0]).to.be(4.5);
       expect(extent[2]).to.be(5.5);
@@ -174,7 +198,7 @@ describe('ol.extent', function() {
     });
 
     it('works for rotation', function() {
-      var extent = ol.extent.getForView2DAndSize(
+      var extent = ol.extent.getForViewAndSize(
           [0, 0], 1, Math.PI / 4, [1, 1]);
       expect(extent[0]).to.roughlyEqual(-Math.sqrt(0.5), 1e-9);
       expect(extent[2]).to.roughlyEqual(Math.sqrt(0.5), 1e-9);
@@ -183,7 +207,7 @@ describe('ol.extent', function() {
     });
 
     it('works for resolution', function() {
-      var extent = ol.extent.getForView2DAndSize(
+      var extent = ol.extent.getForViewAndSize(
           [0, 0], 2, 0, [1, 1]);
       expect(extent[0]).to.be(-1);
       expect(extent[2]).to.be(1);
@@ -192,7 +216,7 @@ describe('ol.extent', function() {
     });
 
     it('works for size', function() {
-      var extent = ol.extent.getForView2DAndSize(
+      var extent = ol.extent.getForViewAndSize(
           [0, 0], 1, 0, [10, 5]);
       expect(extent[0]).to.be(-5);
       expect(extent[2]).to.be(5);
@@ -425,12 +449,13 @@ describe('ol.extent', function() {
 
   });
 
-  describe('transform', function() {
+  describe('#applyTransform()', function() {
 
     it('does transform', function() {
       var transformFn = ol.proj.getTransform('EPSG:4326', 'EPSG:3857');
       var sourceExtent = [-15, -30, 45, 60];
-      var destinationExtent = ol.extent.transform(sourceExtent, transformFn);
+      var destinationExtent = ol.extent.applyTransform(
+          sourceExtent, transformFn);
       expect(destinationExtent).not.to.be(undefined);
       expect(destinationExtent).not.to.be(null);
       // FIXME check values with third-party tool
@@ -456,7 +481,8 @@ describe('ol.extent', function() {
         return output;
       };
       var sourceExtent = [-15, -30, 45, 60];
-      var destinationExtent = ol.extent.transform(sourceExtent, transformFn);
+      var destinationExtent = ol.extent.applyTransform(
+          sourceExtent, transformFn);
       expect(destinationExtent).not.to.be(undefined);
       expect(destinationExtent).not.to.be(null);
       expect(destinationExtent[0]).to.be(-45);
