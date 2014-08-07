@@ -27,6 +27,7 @@ goog.require('ol.style.Text');
  * @constructor
  * @extends {ol.control.Control}
  * @param {olx.control.ControlOptions=} opt_options Measure ruler options.
+ * @api
  */
 ol.control.MeasureRuler = function(opt_options) {
   var options = goog.isDef(opt_options) ? opt_options : {};
@@ -177,27 +178,22 @@ ol.control.MeasureRuler.prototype.initialize_ = function() {
       goog.events.EventType.MOUSEUP,
       function(evt) {
         var pixel = map.getEventPixel(evt);
-        var set = map.forEachFeatureAtPixel(pixel, function(feature, layer) {
-          if (layer.get('name') === 'measure-ruler') {
-            return {layer: layer, feature: feature};
-          }
-        });
-        if (set) {
-          set.layer.getSource().removeFeature(set.feature);
+        var feature = map.forEachFeatureAtPixel(pixel, function(feature) {
+          return feature;
+        }, null, function(){return false;});
+        if (feature) {
+          this.source_.removeFeature(feature);
         }
-      });
+      }, false, this);
 
   goog.events.listen(
       map.getViewport(),
       goog.events.EventType.MOUSEMOVE,
       function(evt) {
         var pixel = map.getEventPixel(evt);
-        var feature = map.forEachFeatureAtPixel(pixel, function(f, l) {
-          if (l.get('name') === 'measure-ruler') {
-            return f;
-          }
-          return false;
-        });
+        var feature = map.forEachFeatureAtPixel(pixel, function(f) {
+          return f;
+        }, null, function(){return false;});
         if (feature) {
           if(map.getViewport().style.cursor === ''){
             map.getViewport().style.cursor = 'pointer';
@@ -349,10 +345,5 @@ ol.control.MeasureRuler.prototype.drawEnd_ = function(drawEvent) {
     return style;
   });
 
-  var controls = map.getControls();
-  controls.forEach(function(ctrl) {
-    if (ctrl.name == 'ol.control.MeasureRuler') {
-      ctrl.toggle();
-    }
-  });
+  this.toggle();
 };
