@@ -152,7 +152,7 @@ ol.control.MeasureRuler.formatFeatureText = function(feature) {
  * @param {ol.MapEvent} mapEvent
  */
 ol.control.MeasureRuler.prototype.handleMapPostrender = function(mapEvent) {
-  if (goog.isNull(mapEvent.frameState)) {
+  if (!goog.isNull(mapEvent.frameState)) {
     if (goog.isDefAndNotNull(mapEvent.frameState.view2DState)) {
       return;
     }
