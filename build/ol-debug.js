@@ -1,5 +1,5 @@
 // OpenLayers 3. See http://ol3.js.org/
-// Version: v3.0.0-beta.7-erd
+// Version: v3.0.0-beta.8-erd
 
 var CLOSURE_NO_DEPS = true;
 // Copyright 2006 The Closure Library Authors. All Rights Reserved.
@@ -68071,11 +68071,6 @@ ol.control.MeasureRuler.formatFeatureText = function(feature) {
  * @param {ol.MapEvent} mapEvent
  */
 ol.control.MeasureRuler.prototype.handleMapPostrender = function(mapEvent) {
-  if (!goog.isNull(mapEvent.frameState)) {
-    if (goog.isDefAndNotNull(mapEvent.frameState.view2DState)) {
-      return;
-    }
-  }
   if (!this.initialized_) {
     this.initialize_();
   }
