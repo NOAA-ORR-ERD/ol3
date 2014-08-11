@@ -5358,6 +5358,15 @@
       ]
     },
     {
+      "name": "ol.control.MeasureArea",
+      "kind": "class",
+      "description": "Adds a button that allows measurement utilizing a Polygon.",
+      "path": "/Users/nathan.wilkins/Documents/ol3/src/ol/control/measureareacontrol.js",
+      "provides": [
+        "ol.control.MeasureArea"
+      ]
+    },
+    {
       "name": "ol.control.MeasureRuler",
       "kind": "class",
       "description": "Adds a button that allows measurement utilizing a LineString.",
@@ -15077,6 +15086,165 @@
     },
     {
       "name": "ol.control.FullScreen#unByKey",
+      "kind": "function",
+      "description": "Removes an event listener using the key returned by `on()` or `once()`.",
+      "path": "/Users/nathan.wilkins/Documents/ol3/src/ol/observable.js",
+      "provides": [
+        "ol.Observable"
+      ]
+    },
+    {
+      "name": "ol.control.MeasureArea#getMap",
+      "kind": "function",
+      "description": "Get the map associated with this control.",
+      "path": "/Users/nathan.wilkins/Documents/ol3/src/ol/control/control.js",
+      "provides": [
+        "ol.control.Control"
+      ]
+    },
+    {
+      "name": "ol.control.MeasureArea#setMap",
+      "kind": "function",
+      "description": "Remove the control from its current map and attach it to the new map.\nSubclasses may set up event handlers to get notified about changes to\nthe map here.",
+      "path": "/Users/nathan.wilkins/Documents/ol3/src/ol/control/control.js",
+      "provides": [
+        "ol.control.Control"
+      ]
+    },
+    {
+      "name": "ol.control.MeasureArea#bindTo",
+      "kind": "function",
+      "description": "The bindTo method allows you to set up a two-way binding between a\n`source` and `target` object. The method returns an object with a\n`transform` method that you can use to provide `from` and `to`\nfunctions to transform values on the way from the source to the\ntarget and on the way back.\n\nFor example, if you had two map views (sourceView and targetView)\nand you wanted the target view to have double the resolution of the\nsource view, you could transform the resolution on the way to and\nfrom the target with the following:\n\n    sourceView.bindTo('resolution', targetView)\n      .transform(\n        function(sourceResolution) {\n          // from sourceView.resolution to targetView.resolution\n          return 2 * sourceResolution;\n        },\n        function(targetResolution) {\n          // from targetView.resolution to sourceView.resolution\n          return targetResolution / 2;\n        }\n      );",
+      "path": "/Users/nathan.wilkins/Documents/ol3/src/ol/object.js",
+      "provides": [
+        "ol.Object",
+        "ol.ObjectEvent",
+        "ol.ObjectEventType"
+      ]
+    },
+    {
+      "name": "ol.control.MeasureArea#get",
+      "kind": "function",
+      "description": "Gets a value.",
+      "path": "/Users/nathan.wilkins/Documents/ol3/src/ol/object.js",
+      "provides": [
+        "ol.Object",
+        "ol.ObjectEvent",
+        "ol.ObjectEventType"
+      ]
+    },
+    {
+      "name": "ol.control.MeasureArea#getKeys",
+      "kind": "function",
+      "description": "Get a list of object property names.",
+      "path": "/Users/nathan.wilkins/Documents/ol3/src/ol/object.js",
+      "provides": [
+        "ol.Object",
+        "ol.ObjectEvent",
+        "ol.ObjectEventType"
+      ]
+    },
+    {
+      "name": "ol.control.MeasureArea#getProperties",
+      "kind": "function",
+      "description": "Get an object of all property names and values.",
+      "path": "/Users/nathan.wilkins/Documents/ol3/src/ol/object.js",
+      "provides": [
+        "ol.Object",
+        "ol.ObjectEvent",
+        "ol.ObjectEventType"
+      ]
+    },
+    {
+      "name": "ol.control.MeasureArea#set",
+      "kind": "function",
+      "description": "Sets a value.",
+      "path": "/Users/nathan.wilkins/Documents/ol3/src/ol/object.js",
+      "provides": [
+        "ol.Object",
+        "ol.ObjectEvent",
+        "ol.ObjectEventType"
+      ]
+    },
+    {
+      "name": "ol.control.MeasureArea#setProperties",
+      "kind": "function",
+      "description": "Sets a collection of key-value pairs.",
+      "path": "/Users/nathan.wilkins/Documents/ol3/src/ol/object.js",
+      "provides": [
+        "ol.Object",
+        "ol.ObjectEvent",
+        "ol.ObjectEventType"
+      ]
+    },
+    {
+      "name": "ol.control.MeasureArea#unbind",
+      "kind": "function",
+      "description": "Removes a binding. Unbinding will set the unbound property to the current\n    value. The object will not be notified, as the value has not changed.",
+      "path": "/Users/nathan.wilkins/Documents/ol3/src/ol/object.js",
+      "provides": [
+        "ol.Object",
+        "ol.ObjectEvent",
+        "ol.ObjectEventType"
+      ]
+    },
+    {
+      "name": "ol.control.MeasureArea#unbindAll",
+      "kind": "function",
+      "description": "Removes all bindings.",
+      "path": "/Users/nathan.wilkins/Documents/ol3/src/ol/object.js",
+      "provides": [
+        "ol.Object",
+        "ol.ObjectEvent",
+        "ol.ObjectEventType"
+      ]
+    },
+    {
+      "name": "ol.control.MeasureArea#dispatchChangeEvent",
+      "kind": "function",
+      "description": "Dispatches a `change` event.",
+      "path": "/Users/nathan.wilkins/Documents/ol3/src/ol/observable.js",
+      "provides": [
+        "ol.Observable"
+      ]
+    },
+    {
+      "name": "ol.control.MeasureArea#getRevision",
+      "kind": "function",
+      "path": "/Users/nathan.wilkins/Documents/ol3/src/ol/observable.js",
+      "provides": [
+        "ol.Observable"
+      ]
+    },
+    {
+      "name": "ol.control.MeasureArea#on",
+      "kind": "function",
+      "description": "Listen for a certain type of event.",
+      "path": "/Users/nathan.wilkins/Documents/ol3/src/ol/observable.js",
+      "provides": [
+        "ol.Observable"
+      ]
+    },
+    {
+      "name": "ol.control.MeasureArea#once",
+      "kind": "function",
+      "description": "Listen once for a certain type of event.",
+      "path": "/Users/nathan.wilkins/Documents/ol3/src/ol/observable.js",
+      "provides": [
+        "ol.Observable"
+      ]
+    },
+    {
+      "name": "ol.control.MeasureArea#un",
+      "kind": "function",
+      "description": "Unlisten for a certain type of event.",
+      "path": "/Users/nathan.wilkins/Documents/ol3/src/ol/observable.js",
+      "provides": [
+        "ol.Observable"
+      ]
+    },
+    {
+      "name": "ol.control.MeasureArea#unByKey",
       "kind": "function",
       "description": "Removes an event listener using the key returned by `on()` or `once()`.",
       "path": "/Users/nathan.wilkins/Documents/ol3/src/ol/observable.js",

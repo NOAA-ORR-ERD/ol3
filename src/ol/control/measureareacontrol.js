@@ -28,6 +28,7 @@ goog.require('ol.style.Text');
  * @constructor
  * @extends {ol.control.Control}
  * @param {olx.control.ControlOptions=} opt_options Measure area options.
+ * @api
  */
 ol.control.MeasureArea = function(opt_options) {
   var options = goog.isDef(opt_options) ? opt_options : {};
@@ -179,29 +180,26 @@ ol.control.MeasureArea.prototype.initialize_ = function() {
       goog.events.EventType.MOUSEUP,
       function(evt) {
         var pixel = map.getEventPixel(evt);
-        var set = map.forEachFeatureAtPixel(pixel, function(feature, layer) {
-          if (layer.get('name') === 'measure-area') {
-            return {layer: layer, feature: feature};
-          }
-        });
-        if (set) {
-          set.layer.getSource().removeFeature(set.feature);
+        var feature = map.forEachFeatureAtPixel(pixel, function(feature) {
+          return feature;
+        }, null, function(){return false;});
+        if (feature) {
+          this.source_.removeFeature(feature);
         }
-      });
+      }, false, this);
 
   goog.events.listen(
       map.getViewport(),
       goog.events.EventType.MOUSEMOVE,
       function(evt) {
         var pixel = map.getEventPixel(evt);
-        var feature = map.forEachFeatureAtPixel(pixel, function(f, l) {
-          if (l.get('name') === 'measure-area') {
-            return f;
-          }
-          return false;
-        });
+        var feature = map.forEachFeatureAtPixel(pixel, function(f) {
+          return f;
+        }, null, function(){return false;});
         if (feature) {
-          map.getViewport().style.cursor = 'pointer';
+          if(map.getViewport().style.cursor === ''){
+            map.getViewport().style.cursor = 'pointer';
+          }
 
           ol.control.MeasureArea.ACTIVE_AREA = feature;
           feature.setStyle(function(resolution) {
@@ -217,9 +215,11 @@ ol.control.MeasureArea.prototype.initialize_ = function() {
               var style = [ol.control.MeasureArea.AREA_DEFAULT_STYLE(text)];
               return style;
             });
-            ol.control.MeasureArea.ACTIVE_AREA = null;
+            ol.control.MeasureArea.ACTIVE_RULER = null;
           }
-          map.getViewport().style.cursor = '';
+          if(map.getViewport().style.cursor === 'pointer'){
+            map.getViewport().style.cursor = '';
+          }
         }
       });
   this.initialized_ = true;
@@ -347,10 +347,5 @@ ol.control.MeasureArea.prototype.drawEnd_ = function(drawEvent) {
     return style;
   });
 
-  var controls = map.getControls();
-  controls.forEach(function(ctrl) {
-    if (ctrl.name == 'ol.control.MeasureArea') {
-      ctrl.toggle();
-    }
-  });
+  this.toggle();
 };
