@@ -107,8 +107,23 @@ olx.LogoOptions;
 
 
 /**
+ * Link url for the logo. Will be followed when the logo is clicked.
+ * @type {string}
+ */
+olx.LogoOptions.prototype.href;
+
+
+/**
+ * Image src for the logo
+ * @type {string}
+ */
+olx.LogoOptions.prototype.src;
+
+
+/**
  * @typedef {{map: (ol.Map|undefined),
  *     maxLines: (number|undefined),
+ *     strokeStyle: (ol.style.Stroke|undefined),
  *     targetSize: (number|undefined)}}
  */
 olx.GraticuleOptions;
@@ -131,6 +146,15 @@ olx.GraticuleOptions.prototype.map;
  * @type {number|undefined}
  */
 olx.GraticuleOptions.prototype.maxLines;
+
+
+/**
+ * The stroke style to use for drawing the graticule. If not provided, the
+ * lines will be drawn with `rgba(0,0,0,0.2)`, a not fully opaque black.
+ *
+ * @type {ol.style.Stroke|undefined}
+ */
+olx.GraticuleOptions.prototype.strokeStyle;
 
 
 /**
@@ -409,7 +433,7 @@ olx.ViewOptions.prototype.center;
 
 /**
  * Rotation constraint. `false` means no constraint. `true` means no constraint,
- * but snap to zero near zero. A number constraints the rotation to that number
+ * but snap to zero near zero. A number constrains the rotation to that number
  * of values. For example, `4` will constrain the rotation to 0, 90, 180, and
  * 270 degrees. The default is `true`.
  * @type {boolean|number|undefined}
@@ -1176,6 +1200,7 @@ olx.format.PolylineOptions;
 /**
  * The factor by which the coordinates values will be scaled.
  * Default is `1e5`.
+ * @type {number}
  */
 olx.format.PolylineOptions.prototype.factor;
 
@@ -1211,10 +1236,18 @@ olx.format.IGCOptions.prototype.altitudeMode;
 
 
 /**
- * @typedef {{defaultStyle: (Array.<ol.style.Style>|undefined)}}
+ * @typedef {{extractStyles: (boolean|undefined),
+ *     defaultStyle: (Array.<ol.style.Style>|undefined)}}
  * @api
  */
 olx.format.KMLOptions;
+
+
+/**
+ * Extract styles from the KML. Default is `true`.
+ * @type {boolean|undefined}
+ */
+olx.format.KMLOptions.prototype.extractStyles;
 
 
 /**
@@ -2770,7 +2803,7 @@ olx.source.FormatVectorOptions.prototype.format;
 
 /**
  * Logo.
- * @type{string|olx.LogoOptions|undefined}
+ * @type {string|olx.LogoOptions|undefined}
  */
 olx.source.FormatVectorOptions.prototype.logo;
 
@@ -2812,7 +2845,7 @@ olx.source.GeoJSONOptions.prototype.defaultProjection;
 
 /**
  * Logo.
- * @type{string|olx.LogoOptions|undefined}
+ * @type {string|olx.LogoOptions|undefined}
  */
 olx.source.GeoJSONOptions.prototype.logo;
 
@@ -2883,7 +2916,7 @@ olx.source.GPXOptions.prototype.doc;
 
 /**
  * Logo.
- * @type{string|olx.LogoOptions|undefined}
+ * @type {string|olx.LogoOptions|undefined}
  */
 olx.source.GPXOptions.prototype.logo;
 
@@ -2958,7 +2991,7 @@ olx.source.TileImageOptions.prototype.crossOrigin;
 
 /**
  * Logo.
- * @type{string|olx.LogoOptions|undefined}
+ * @type {string|olx.LogoOptions|undefined}
  */
 olx.source.TileImageOptions.prototype.logo;
 
@@ -3056,7 +3089,7 @@ olx.source.TileVectorOptions.prototype.format;
 
 /**
  * Logo.
- * @type{string|olx.LogoOptions|undefined}
+ * @type {string|olx.LogoOptions|undefined}
  */
 olx.source.TileVectorOptions.prototype.logo;
 
@@ -3134,7 +3167,7 @@ olx.source.TopoJSONOptions.prototype.defaultProjection;
 
 /**
  * Logo.
- * @type{string|olx.LogoOptions|undefined}
+ * @type {string|olx.LogoOptions|undefined}
  */
 olx.source.TopoJSONOptions.prototype.logo;
 
@@ -3300,6 +3333,7 @@ olx.source.MapGuideOptions.prototype.params;
  * @typedef {{attributions: (Array.<ol.Attribution>|undefined),
  *     defaultStyle: (Array.<ol.style.Style>|undefined),
  *     doc: (Document|undefined),
+ *     extractStyles: (boolean|undefined),
  *     logo: (string|olx.LogoOptions|undefined),
  *     node: (Node|undefined),
  *     projection: ol.proj.ProjectionLike,
@@ -3333,8 +3367,15 @@ olx.source.KMLOptions.prototype.doc;
 
 
 /**
+ * Extract styles from the KML document. Default is `true`.
+ * @type {boolean|undefined}
+ */
+olx.source.KMLOptions.prototype.extractStyles;
+
+
+/**
  * Logo.
- * @type{string|olx.LogoOptions|undefined}
+ * @type {string|olx.LogoOptions|undefined}
  */
 olx.source.KMLOptions.prototype.logo;
 
@@ -3505,7 +3546,7 @@ olx.source.OSMXMLOptions.prototype.doc;
 
 /**
  * Logo.
- * @type{string|olx.LogoOptions|undefined}
+ * @type {string|olx.LogoOptions|undefined}
  */
 olx.source.OSMXMLOptions.prototype.logo;
 
@@ -3588,7 +3629,7 @@ olx.source.ImageCanvasOptions.prototype.canvasFunction;
 
 /**
  * Logo.
- * @type{string|olx.LogoOptions|undefined}
+ * @type {string|olx.LogoOptions|undefined}
  */
 olx.source.ImageCanvasOptions.prototype.logo;
 
@@ -3645,7 +3686,7 @@ olx.source.ImageVectorOptions.prototype.attributions;
 
 /**
  * Logo.
- * @type{string|olx.LogoOptions|undefined}
+ * @type {string|olx.LogoOptions|undefined}
  */
 olx.source.ImageVectorOptions.prototype.logo;
 
@@ -3736,7 +3777,7 @@ olx.source.ImageWMSOptions.prototype.serverType;
 
 /**
  * Logo.
- * @type{string|olx.LogoOptions|undefined}
+ * @type {string|olx.LogoOptions|undefined}
  */
 olx.source.ImageWMSOptions.prototype.logo;
 
@@ -3876,7 +3917,7 @@ olx.source.ImageStaticOptions.prototype.imageSize;
 
 /**
  * Logo.
- * @type{string|olx.LogoOptions|undefined}
+ * @type {string|olx.LogoOptions|undefined}
  */
 olx.source.ImageStaticOptions.prototype.logo;
 
@@ -3938,7 +3979,7 @@ olx.source.ServerVectorOptions.prototype.strategy;
 
 /**
  * Logo.
- * @type{string|olx.LogoOptions|undefined}
+ * @type {string|olx.LogoOptions|undefined}
  */
 olx.source.ServerVectorOptions.prototype.logo;
 
@@ -4046,7 +4087,7 @@ olx.source.TileWMSOptions.prototype.hidpi;
 
 /**
  * Logo.
- * @type{string|olx.LogoOptions|undefined}
+ * @type {string|olx.LogoOptions|undefined}
  */
 olx.source.TileWMSOptions.prototype.logo;
 
@@ -4133,7 +4174,7 @@ olx.source.VectorOptions.prototype.features;
 
 /**
  * Logo.
- * @type{string|olx.LogoOptions|undefined}
+ * @type {string|olx.LogoOptions|undefined}
  */
 olx.source.VectorOptions.prototype.logo;
 
@@ -4199,7 +4240,7 @@ olx.source.StaticVectorOptions.prototype.format;
 
 /**
  * Logo.
- * @type{string|olx.LogoOptions|undefined}
+ * @type {string|olx.LogoOptions|undefined}
  */
 olx.source.StaticVectorOptions.prototype.logo;
 
@@ -4285,7 +4326,7 @@ olx.source.WMTSOptions.prototype.crossOrigin;
 
 /**
  * Logo.
- * @type{string|olx.LogoOptions|undefined}
+ * @type {string|olx.LogoOptions|undefined}
  */
 olx.source.WMTSOptions.prototype.logo;
 
@@ -4425,7 +4466,7 @@ olx.source.XYZOptions.prototype.crossOrigin;
 
 /**
  * Logo.
- * @type{string|olx.LogoOptions|undefined}
+ * @type {string|olx.LogoOptions|undefined}
  */
 olx.source.XYZOptions.prototype.logo;
 
@@ -4525,7 +4566,7 @@ olx.source.ZoomifyOptions.prototype.crossOrigin;
 
 /**
  * Logo.
- * @type{string|olx.LogoOptions|undefined}
+ * @type {string|olx.LogoOptions|undefined}
  */
 olx.source.ZoomifyOptions.prototype.logo;
 

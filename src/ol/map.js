@@ -554,7 +554,7 @@ ol.Map.prototype.disposeInternal = function() {
  *     be `null`. To stop detection, callback functions can return a truthy
  *     value.
  * @param {S=} opt_this Value to use as `this` when executing `callback`.
- * @param {function(this: U, ol.layer.Layer): boolean=} opt_layerFilter Layer
+ * @param {(function(this: U, ol.layer.Layer): boolean)=} opt_layerFilter Layer
  *     filter function, only layers which are visible and for which this
  *     function returns `true` will be tested for features. By default, all
  *     visible layers will be tested. Feature overlays will always be tested.
@@ -604,7 +604,7 @@ ol.Map.prototype.getEventPixel = function(event) {
   // So we ourselves compute the position of touch events.
   // See https://github.com/google/closure-library/pull/323
   if (goog.isDef(event.changedTouches)) {
-    var touch = event.changedTouches.item(0);
+    var touch = event.changedTouches[0];
     var viewportPosition = goog.style.getClientPosition(this.viewport_);
     return [
       touch.clientX - viewportPosition.x,
