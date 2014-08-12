@@ -178,9 +178,11 @@ ol.control.MeasureRuler.prototype.initialize_ = function() {
       goog.events.EventType.MOUSEUP,
       function(evt) {
         var pixel = map.getEventPixel(evt);
-        var feature = map.forEachFeatureAtPixel(pixel, function(feature) {
-          return feature;
-        }, null, function(){return false;});
+        var feature = map.forEachFeatureAtPixel(pixel, function(f) {
+          if(f.get('layer') == 'ruler_measure'){
+            return f;
+          }
+        }, null);
         if (feature) {
           this.source_.removeFeature(feature);
         }
@@ -192,12 +194,12 @@ ol.control.MeasureRuler.prototype.initialize_ = function() {
       function(evt) {
         var pixel = map.getEventPixel(evt);
         var feature = map.forEachFeatureAtPixel(pixel, function(f) {
-          return f;
-        }, null, function(){return false;});
-        if (feature) {
-          if(map.getViewport().style.cursor === ''){
-            map.getViewport().style.cursor = 'pointer';
+          if(f.get('layer') == 'ruler_measure'){
+            return f;
           }
+        }, null);
+        if (feature) {
+          map.getViewport().style.cursor = 'pointer';
 
           ol.control.MeasureRuler.ACTIVE_RULER = feature;
           feature.setStyle(function(resolution) {
@@ -338,6 +340,7 @@ ol.control.MeasureRuler.prototype.handleClick_ = function(pointerEvent) {
 ol.control.MeasureRuler.prototype.drawEnd_ = function(drawEvent) {
   var map = this.getMap();
   var feature = drawEvent.feature;
+  feature.set('layer', 'ruler_measure');
 
   feature.setStyle(function(resolution) {
     var text = ol.control.MeasureRuler.formatFeatureText(feature);

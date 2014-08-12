@@ -154,7 +154,7 @@ ol.control.MeasureArea.formatFeatureText = function(feature) {
  * @param {ol.MapEvent} mapEvent
  */
 ol.control.MeasureArea.prototype.handleMapPostrender = function(mapEvent) {
-  if (goog.isNull(mapEvent.frameState)) {
+  if (!goog.isNull(mapEvent.frameState)) {
     if (goog.isDefAndNotNull(mapEvent.frameState.view2DState)) {
       return;
     }
@@ -180,9 +180,11 @@ ol.control.MeasureArea.prototype.initialize_ = function() {
       goog.events.EventType.MOUSEUP,
       function(evt) {
         var pixel = map.getEventPixel(evt);
-        var feature = map.forEachFeatureAtPixel(pixel, function(feature) {
-          return feature;
-        }, null, function(){return false;});
+        var feature = map.forEachFeatureAtPixel(pixel, function(f) {
+          if(f.get('layer') == 'area_measure'){
+            return f;
+          }
+        }, null);
         if (feature) {
           this.source_.removeFeature(feature);
         }
@@ -194,12 +196,12 @@ ol.control.MeasureArea.prototype.initialize_ = function() {
       function(evt) {
         var pixel = map.getEventPixel(evt);
         var feature = map.forEachFeatureAtPixel(pixel, function(f) {
-          return f;
-        }, null, function(){return false;});
-        if (feature) {
-          if(map.getViewport().style.cursor === ''){
-            map.getViewport().style.cursor = 'pointer';
+          if(f.get('layer') == 'area_measure'){
+            return f;
           }
+        }, null);
+        if (feature) {
+          map.getViewport().style.cursor = 'pointer';
 
           ol.control.MeasureArea.ACTIVE_AREA = feature;
           feature.setStyle(function(resolution) {
@@ -340,6 +342,7 @@ ol.control.MeasureArea.prototype.handleClick_ = function(pointerEvent) {
 ol.control.MeasureArea.prototype.drawEnd_ = function(drawEvent) {
   var map = this.getMap();
   var feature = drawEvent.feature;
+  feature.set('layer', 'area_measure');
 
   feature.setStyle(function(resolution) {
     var text = ol.control.MeasureArea.formatFeatureText(feature);
