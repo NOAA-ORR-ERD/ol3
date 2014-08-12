@@ -201,7 +201,7 @@ ol.control.MeasureArea.prototype.initialize_ = function() {
           }
         }, null);
         if (feature) {
-          map.getViewport().style.cursor = 'pointer';
+          // map.getViewport().style.cursor = 'pointer';
 
           ol.control.MeasureArea.ACTIVE_AREA = feature;
           feature.setStyle(function(resolution) {
@@ -219,9 +219,9 @@ ol.control.MeasureArea.prototype.initialize_ = function() {
             });
             ol.control.MeasureArea.ACTIVE_RULER = null;
           }
-          if(map.getViewport().style.cursor === 'pointer'){
-            map.getViewport().style.cursor = '';
-          }
+          // if(map.getViewport().style.cursor === 'pointer'){
+          //   map.getViewport().style.cursor = '';
+          // }
         }
       });
   this.initialized_ = true;

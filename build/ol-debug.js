@@ -1,5 +1,5 @@
 // OpenLayers 3. See http://ol3.js.org/
-// Version: v3.0.0-gamma.5-erd-1-g169faaf
+// Version: v3.0.0-gamma.6-erd
 
 var CLOSURE_NO_DEPS = true;
 // Copyright 2006 The Closure Library Authors. All Rights Reserved.
@@ -68120,7 +68120,7 @@ ol.control.MeasureArea.prototype.initialize_ = function() {
           }
         }, null);
         if (feature) {
-          map.getViewport().style.cursor = 'pointer';
+          // map.getViewport().style.cursor = 'pointer';
 
           ol.control.MeasureArea.ACTIVE_AREA = feature;
           feature.setStyle(function(resolution) {
@@ -68138,9 +68138,9 @@ ol.control.MeasureArea.prototype.initialize_ = function() {
             });
             ol.control.MeasureArea.ACTIVE_RULER = null;
           }
-          if(map.getViewport().style.cursor === 'pointer'){
-            map.getViewport().style.cursor = '';
-          }
+          // if(map.getViewport().style.cursor === 'pointer'){
+          //   map.getViewport().style.cursor = '';
+          // }
         }
       });
   this.initialized_ = true;
@@ -68473,7 +68473,7 @@ ol.control.MeasureRuler.prototype.initialize_ = function() {
           }
         }, null);
         if (feature) {
-          map.getViewport().style.cursor = 'pointer';
+          // map.getViewport().style.cursor = 'pointer';
 
           ol.control.MeasureRuler.ACTIVE_RULER = feature;
           feature.setStyle(function(resolution) {
@@ -68491,9 +68491,9 @@ ol.control.MeasureRuler.prototype.initialize_ = function() {
             });
             ol.control.MeasureRuler.ACTIVE_RULER = null;
           }
-          if(map.getViewport().style.cursor === 'pointer'){
-            map.getViewport().style.cursor = '';
-          }
+          // if(map.getViewport().style.cursor === 'pointer'){
+          //   map.getViewport().style.cursor = '';
+          // }
         }
       });
   this.initialized_ = true;
