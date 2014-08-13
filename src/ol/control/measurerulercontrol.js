@@ -2,7 +2,7 @@ goog.provide('ol.control.MeasureRuler');
 
 goog.require('goog.dom');
 goog.require('goog.dom.TagName');
-goog.require('goog.dom.classes');
+goog.require('goog.dom.classlist');
 goog.require('goog.events');
 goog.require('goog.events.EventType');
 goog.require('ol.control.Control');
@@ -306,7 +306,7 @@ ol.control.MeasureRuler.RULER_HOVER_STYLE = function(text) {
 ol.control.MeasureRuler.prototype.toggle = function() {
   var map = this.getMap();
 
-  goog.dom.classes.toggle(this.button, 'on');
+  goog.dom.classlist.toggle(this.button, 'on');
 
   if (this.draw_ === null) {
     this.draw_ = new ol.interaction.Draw({

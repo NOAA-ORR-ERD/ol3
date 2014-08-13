@@ -308,7 +308,7 @@ ol.control.MeasureArea.AREA_HOVER_STYLE = function(text) {
 ol.control.MeasureArea.prototype.toggle = function() {
   var map = this.getMap();
 
-  goog.dom.classes.toggle(this.button, 'on');
+  goog.dom.classlist.toggle(this.button, 'on');
 
   if (this.draw_ === null) {
     this.draw_ = new ol.interaction.Draw({
