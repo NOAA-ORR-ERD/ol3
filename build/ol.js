@@ -1,6 +1,6 @@
 // OpenLayers 3. See http://openlayers.org/
 // License: https://raw.githubusercontent.com/openlayers/ol3/master/LICENSE.md
-// Version: v3.4.0-37-gaade279
+// Version: v3.4.0-38-gd19756b
 
 (function (root, factory) {
   if (typeof define === "function" && define.amd) {
