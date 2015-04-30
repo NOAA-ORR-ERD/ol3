@@ -1,6 +1,6 @@
 // OpenLayers 3. See http://openlayers.org/
 // License: https://raw.githubusercontent.com/openlayers/ol3/master/LICENSE.md
-// Version: v3.4.0-38-gd19756b
+// Version: v3.4.0-39-g9fea078
 
 (function (root, factory) {
   if (typeof define === "function" && define.amd) {
@@ -41909,246 +41909,6 @@ goog.debug.Console.logToConsole_ = function(console, fnName, record) {
   }
 };
 
-// Copyright 2006 The Closure Library Authors. All Rights Reserved.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS-IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
-/**
- * @fileoverview Utilities for adding, removing and setting classes.  Prefer
- * {@link goog.dom.classlist} over these utilities since goog.dom.classlist
- * conforms closer to the semantics of Element.classList, is faster (uses
- * native methods rather than parsing strings on every call) and compiles
- * to smaller code as a result.
- *
- * Note: these utilities are meant to operate on HTMLElements and
- * will not work on elements with differing interfaces (such as SVGElements).
- *
- * @author arv@google.com (Erik Arvidsson)
- */
-
-
-goog.provide('goog.dom.classes');
-
-goog.require('goog.array');
-
-
-/**
- * Sets the entire class name of an element.
- * @param {Node} element DOM node to set class of.
- * @param {string} className Class name(s) to apply to element.
- * @deprecated Use goog.dom.classlist.set instead.
- */
-goog.dom.classes.set = function(element, className) {
-  element.className = className;
-};
-
-
-/**
- * Gets an array of class names on an element
- * @param {Node} element DOM node to get class of.
- * @return {!Array<?>} Class names on {@code element}. Some browsers add extra
- *     properties to the array. Do not depend on any of these!
- * @deprecated Use goog.dom.classlist.get instead.
- */
-goog.dom.classes.get = function(element) {
-  var className = element.className;
-  // Some types of elements don't have a className in IE (e.g. iframes).
-  // Furthermore, in Firefox, className is not a string when the element is
-  // an SVG element.
-  return goog.isString(className) && className.match(/\S+/g) || [];
-};
-
-
-/**
- * Adds a class or classes to an element. Does not add multiples of class names.
- * @param {Node} element DOM node to add class to.
- * @param {...string} var_args Class names to add.
- * @return {boolean} Whether class was added (or all classes were added).
- * @deprecated Use goog.dom.classlist.add or goog.dom.classlist.addAll instead.
- */
-goog.dom.classes.add = function(element, var_args) {
-  var classes = goog.dom.classes.get(element);
-  var args = goog.array.slice(arguments, 1);
-  var expectedCount = classes.length + args.length;
-  goog.dom.classes.add_(classes, args);
-  goog.dom.classes.set(element, classes.join(' '));
-  return classes.length == expectedCount;
-};
-
-
-/**
- * Removes a class or classes from an element.
- * @param {Node} element DOM node to remove class from.
- * @param {...string} var_args Class name(s) to remove.
- * @return {boolean} Whether all classes in {@code var_args} were found and
- *     removed.
- * @deprecated Use goog.dom.classlist.remove or goog.dom.classlist.removeAll
- *     instead.
- */
-goog.dom.classes.remove = function(element, var_args) {
-  var classes = goog.dom.classes.get(element);
-  var args = goog.array.slice(arguments, 1);
-  var newClasses = goog.dom.classes.getDifference_(classes, args);
-  goog.dom.classes.set(element, newClasses.join(' '));
-  return newClasses.length == classes.length - args.length;
-};
-
-
-/**
- * Helper method for {@link goog.dom.classes.add} and
- * {@link goog.dom.classes.addRemove}. Adds one or more classes to the supplied
- * classes array.
- * @param {Array<string>} classes All class names for the element, will be
- *     updated to have the classes supplied in {@code args} added.
- * @param {Array<string>} args Class names to add.
- * @private
- */
-goog.dom.classes.add_ = function(classes, args) {
-  for (var i = 0; i < args.length; i++) {
-    if (!goog.array.contains(classes, args[i])) {
-      classes.push(args[i]);
-    }
-  }
-};
-
-
-/**
- * Helper method for {@link goog.dom.classes.remove} and
- * {@link goog.dom.classes.addRemove}. Calculates the difference of two arrays.
- * @param {!Array<string>} arr1 First array.
- * @param {!Array<string>} arr2 Second array.
- * @return {!Array<string>} The first array without the elements of the second
- *     array.
- * @private
- */
-goog.dom.classes.getDifference_ = function(arr1, arr2) {
-  return goog.array.filter(arr1, function(item) {
-    return !goog.array.contains(arr2, item);
-  });
-};
-
-
-/**
- * Switches a class on an element from one to another without disturbing other
- * classes. If the fromClass isn't removed, the toClass won't be added.
- * @param {Node} element DOM node to swap classes on.
- * @param {string} fromClass Class to remove.
- * @param {string} toClass Class to add.
- * @return {boolean} Whether classes were switched.
- * @deprecated Use goog.dom.classlist.swap instead.
- */
-goog.dom.classes.swap = function(element, fromClass, toClass) {
-  var classes = goog.dom.classes.get(element);
-
-  var removed = false;
-  for (var i = 0; i < classes.length; i++) {
-    if (classes[i] == fromClass) {
-      goog.array.splice(classes, i--, 1);
-      removed = true;
-    }
-  }
-
-  if (removed) {
-    classes.push(toClass);
-    goog.dom.classes.set(element, classes.join(' '));
-  }
-
-  return removed;
-};
-
-
-/**
- * Adds zero or more classes to an element and removes zero or more as a single
- * operation. Unlike calling {@link goog.dom.classes.add} and
- * {@link goog.dom.classes.remove} separately, this is more efficient as it only
- * parses the class property once.
- *
- * If a class is in both the remove and add lists, it will be added. Thus,
- * you can use this instead of {@link goog.dom.classes.swap} when you have
- * more than two class names that you want to swap.
- *
- * @param {Node} element DOM node to swap classes on.
- * @param {?(string|Array<string>)} classesToRemove Class or classes to
- *     remove, if null no classes are removed.
- * @param {?(string|Array<string>)} classesToAdd Class or classes to add, if
- *     null no classes are added.
- * @deprecated Use goog.dom.classlist.addRemove instead.
- */
-goog.dom.classes.addRemove = function(element, classesToRemove, classesToAdd) {
-  var classes = goog.dom.classes.get(element);
-  if (goog.isString(classesToRemove)) {
-    goog.array.remove(classes, classesToRemove);
-  } else if (goog.isArray(classesToRemove)) {
-    classes = goog.dom.classes.getDifference_(classes, classesToRemove);
-  }
-
-  if (goog.isString(classesToAdd) &&
-      !goog.array.contains(classes, classesToAdd)) {
-    classes.push(classesToAdd);
-  } else if (goog.isArray(classesToAdd)) {
-    goog.dom.classes.add_(classes, classesToAdd);
-  }
-
-  goog.dom.classes.set(element, classes.join(' '));
-};
-
-
-/**
- * Returns true if an element has a class.
- * @param {Node} element DOM node to test.
- * @param {string} className Class name to test for.
- * @return {boolean} Whether element has the class.
- * @deprecated Use goog.dom.classlist.contains instead.
- */
-goog.dom.classes.has = function(element, className) {
-  return goog.array.contains(goog.dom.classes.get(element), className);
-};
-
-
-/**
- * Adds or removes a class depending on the enabled argument.
- * @param {Node} element DOM node to add or remove the class on.
- * @param {string} className Class name to add or remove.
- * @param {boolean} enabled Whether to add or remove the class (true adds,
- *     false removes).
- * @deprecated Use goog.dom.classlist.enable or goog.dom.classlist.enableAll
- *     instead.
- */
-goog.dom.classes.enable = function(element, className, enabled) {
-  if (enabled) {
-    goog.dom.classes.add(element, className);
-  } else {
-    goog.dom.classes.remove(element, className);
-  }
-};
-
-
-/**
- * Removes a class if an element has it, and adds it the element doesn't have
- * it.  Won't affect other classes on the node.
- * @param {Node} element DOM node to toggle class on.
- * @param {string} className Class to toggle.
- * @return {boolean} True if class was added, false if it was removed
- *     (in other words, whether element has the class after this function has
- *     been called).
- * @deprecated Use goog.dom.classlist.toggle instead.
- */
-goog.dom.classes.toggle = function(element, className) {
-  var add = !goog.dom.classes.has(element, className);
-  goog.dom.classes.enable(element, className, add);
-  return add;
-};
-
 goog.provide('ol.geom.Geometry');
 goog.provide('ol.geom.GeometryType');
 
@@ -56619,7 +56379,6 @@ goog.provide('ol.control.MeasureArea');
 goog.require('goog.debug.Console');
 goog.require('goog.dom');
 goog.require('goog.dom.TagName');
-goog.require('goog.dom.classes');
 goog.require('goog.events');
 goog.require('goog.events.EventType');
 goog.require('ol.control.Control');
@@ -56660,6 +56419,12 @@ ol.control.MeasureArea = function(opt_options) {
    * @type {?ol.interaction.Draw}
    */
   this.draw_ = null;
+
+  /**
+   * @private
+   * @type {boolean}
+   */
+  this.hasLayer_ = false;
 
   var cssClassName = goog.isDef(options.className) ?
       options.className : 'ol-measure-area';
@@ -56709,12 +56474,6 @@ ol.control.MeasureArea = function(opt_options) {
     name: 'measure-area'
   });
 
-  /**
-   * @private
-   * @type {boolean}
-   */
-  this.initialized_ = false;
-
   var element = goog.dom.createDom(goog.dom.TagName.DIV, {
     'class': cssClassName + ' ' + ol.css.CLASS_UNSELECTABLE
   }, this.button);
@@ -56745,7 +56504,7 @@ ol.control.MeasureArea.formatFeatureText = function(feature) {
   conversions.nm = conversions.km * 0.2915533496;
   // calculate the miles
   conversions.mi = conversions.km * 0.38610;
-  
+
 
   for (var key in conversions) {
     if (conversions[key].toString().split('.')[0].length < 2) {
@@ -56766,30 +56525,12 @@ ol.control.MeasureArea.formatFeatureText = function(feature) {
 
 
 /**
- * @public
- * @param {ol.MapEvent} mapEvent
- */
-ol.control.MeasureArea.prototype.handleMapPostrender = function(mapEvent) {
-  if (!goog.isNull(mapEvent.frameState)) {
-    if (goog.isDefAndNotNull(mapEvent.frameState.view2DState)) {
-      return;
-    }
-  }
-  if (!this.initialized_) {
-    this.initialize_();
-  }
-};
-
-
-/**
- * Initializes adds a layer to the map that will contain any areas added
- * and sets up listeners for hover and click events on that layer.
+ * Sets up listeners for hover and click events on relavent layer.
  *
  * @private
  */
-ol.control.MeasureArea.prototype.initialize_ = function() {
+ol.control.MeasureArea.prototype.addListeners = function() {
   var map = this.getMap();
-  map.addLayer(this.vector_);
 
   goog.events.listen(
       map.getViewport(),
@@ -56797,7 +56538,7 @@ ol.control.MeasureArea.prototype.initialize_ = function() {
       function(evt) {
         var pixel = map.getEventPixel(evt);
         var feature = map.forEachFeatureAtPixel(pixel, function(f) {
-          if(f.get('layer') == 'area_measure'){
+          if (f.get('layer') == 'area_measure') {
             return f;
           }
         }, null);
@@ -56812,7 +56553,7 @@ ol.control.MeasureArea.prototype.initialize_ = function() {
       function(evt) {
         var pixel = map.getEventPixel(evt);
         var feature = map.forEachFeatureAtPixel(pixel, function(f) {
-          if(f.get('layer') == 'area_measure'){
+          if (f.get('layer') == 'area_measure') {
             return f;
           }
         }, null);
@@ -56840,7 +56581,6 @@ ol.control.MeasureArea.prototype.initialize_ = function() {
           // }
         }
       });
-  this.initialized_ = true;
 };
 
 
@@ -56925,6 +56665,11 @@ ol.control.MeasureArea.prototype.toggle = function() {
   var map = this.getMap();
 
   goog.dom.classlist.toggle(this.button, 'on');
+  if(!this.hasLayer_){
+    this.hasLayer_ = true;
+    map.addLayer(this.vector_);
+    this.addListeners();
+  }
 
   if (this.draw_ === null) {
     this.draw_ = new ol.interaction.Draw({
@@ -56956,7 +56701,6 @@ ol.control.MeasureArea.prototype.handleClick_ = function(pointerEvent) {
  * @param {ol.DrawEvent} drawEvent
  */
 ol.control.MeasureArea.prototype.drawEnd_ = function(drawEvent) {
-  var map = this.getMap();
   var feature = drawEvent.feature;
   feature.set('layer', 'area_measure');
 
@@ -57015,6 +56759,12 @@ ol.control.MeasureRuler = function(opt_options) {
    */
   this.draw_ = null;
 
+  /**
+   * @private
+   * @type {boolean}
+   */
+  this.hasLayer_ = false;
+
   var cssClassName = goog.isDef(options.className) ?
       options.className : 'ol-measure-ruler';
 
@@ -57062,12 +56812,6 @@ ol.control.MeasureRuler = function(opt_options) {
     source: this.source_,
     name: 'measure-ruler'
   });
-
-  /**
-   * @private
-   * @type {boolean}
-   */
-  this.initialized_ = false;
 
   var element = goog.dom.createDom(goog.dom.TagName.DIV, {
     'class': cssClassName + ' ' + ol.css.CLASS_UNSELECTABLE
@@ -57119,30 +56863,12 @@ ol.control.MeasureRuler.formatFeatureText = function(feature) {
 
 
 /**
- * @public
- * @param {ol.MapEvent} mapEvent
- */
-ol.control.MeasureRuler.prototype.handleMapPostrender = function(mapEvent) {
-  if (!goog.isNull(mapEvent.frameState)) {
-    if (goog.isDefAndNotNull(mapEvent.frameState.view2DState)) {
-      return;
-    }
-  }
-  if (!this.initialized_) {
-    this.initialize_();
-  }
-};
-
-
-/**
- * Initializes adds a layer to the map that will contain any rulers added
- * and sets up listeners for hover and click events on that layer.
+ * Sets up listeners for hover and click events on relavent layer.
  *
  * @private
  */
-ol.control.MeasureRuler.prototype.initialize_ = function() {
+ol.control.MeasureRuler.prototype.addListeners = function() {
   var map = this.getMap();
-  map.addLayer(this.vector_);
 
   goog.events.listen(
       map.getViewport(),
@@ -57150,7 +56876,7 @@ ol.control.MeasureRuler.prototype.initialize_ = function() {
       function(evt) {
         var pixel = map.getEventPixel(evt);
         var feature = map.forEachFeatureAtPixel(pixel, function(f) {
-          if(f.get('layer') == 'ruler_measure'){
+          if (f.get('layer') == 'ruler_measure') {
             return f;
           }
         }, null);
@@ -57165,7 +56891,7 @@ ol.control.MeasureRuler.prototype.initialize_ = function() {
       function(evt) {
         var pixel = map.getEventPixel(evt);
         var feature = map.forEachFeatureAtPixel(pixel, function(f) {
-          if(f.get('layer') == 'ruler_measure'){
+          if (f.get('layer') == 'ruler_measure') {
             return f;
           }
         }, null);
@@ -57193,7 +56919,6 @@ ol.control.MeasureRuler.prototype.initialize_ = function() {
           // }
         }
       });
-  this.initialized_ = true;
 };
 
 
@@ -57278,6 +57003,11 @@ ol.control.MeasureRuler.prototype.toggle = function() {
   var map = this.getMap();
 
   goog.dom.classlist.toggle(this.button, 'on');
+  if(!this.hasLayer_){
+    this.hasLayer_ = true;
+    map.addLayer(this.vector_);
+    this.addListeners();
+  }
 
   if (this.draw_ === null) {
     this.draw_ = new ol.interaction.Draw({
@@ -57309,7 +57039,6 @@ ol.control.MeasureRuler.prototype.handleClick_ = function(pointerEvent) {
  * @param {ol.DrawEvent} drawEvent
  */
 ol.control.MeasureRuler.prototype.drawEnd_ = function(drawEvent) {
-  var map = this.getMap();
   var feature = drawEvent.feature;
   feature.set('layer', 'ruler_measure');
 

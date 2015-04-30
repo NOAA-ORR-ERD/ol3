@@ -3,7 +3,6 @@ goog.provide('ol.control.MeasureArea');
 goog.require('goog.debug.Console');
 goog.require('goog.dom');
 goog.require('goog.dom.TagName');
-goog.require('goog.dom.classes');
 goog.require('goog.events');
 goog.require('goog.events.EventType');
 goog.require('ol.control.Control');
@@ -44,6 +43,12 @@ ol.control.MeasureArea = function(opt_options) {
    * @type {?ol.interaction.Draw}
    */
   this.draw_ = null;
+
+  /**
+   * @private
+   * @type {boolean}
+   */
+  this.hasLayer_ = false;
 
   var cssClassName = goog.isDef(options.className) ?
       options.className : 'ol-measure-area';
@@ -93,12 +98,6 @@ ol.control.MeasureArea = function(opt_options) {
     name: 'measure-area'
   });
 
-  /**
-   * @private
-   * @type {boolean}
-   */
-  this.initialized_ = false;
-
   var element = goog.dom.createDom(goog.dom.TagName.DIV, {
     'class': cssClassName + ' ' + ol.css.CLASS_UNSELECTABLE
   }, this.button);
@@ -129,7 +128,7 @@ ol.control.MeasureArea.formatFeatureText = function(feature) {
   conversions.nm = conversions.km * 0.2915533496;
   // calculate the miles
   conversions.mi = conversions.km * 0.38610;
-  
+
 
   for (var key in conversions) {
     if (conversions[key].toString().split('.')[0].length < 2) {
@@ -150,30 +149,12 @@ ol.control.MeasureArea.formatFeatureText = function(feature) {
 
 
 /**
- * @public
- * @param {ol.MapEvent} mapEvent
- */
-ol.control.MeasureArea.prototype.handleMapPostrender = function(mapEvent) {
-  if (!goog.isNull(mapEvent.frameState)) {
-    if (goog.isDefAndNotNull(mapEvent.frameState.view2DState)) {
-      return;
-    }
-  }
-  if (!this.initialized_) {
-    this.initialize_();
-  }
-};
-
-
-/**
- * Initializes adds a layer to the map that will contain any areas added
- * and sets up listeners for hover and click events on that layer.
+ * Sets up listeners for hover and click events on relavent layer.
  *
  * @private
  */
-ol.control.MeasureArea.prototype.initialize_ = function() {
+ol.control.MeasureArea.prototype.addListeners = function() {
   var map = this.getMap();
-  map.addLayer(this.vector_);
 
   goog.events.listen(
       map.getViewport(),
@@ -181,7 +162,7 @@ ol.control.MeasureArea.prototype.initialize_ = function() {
       function(evt) {
         var pixel = map.getEventPixel(evt);
         var feature = map.forEachFeatureAtPixel(pixel, function(f) {
-          if(f.get('layer') == 'area_measure'){
+          if (f.get('layer') == 'area_measure') {
             return f;
           }
         }, null);
@@ -196,7 +177,7 @@ ol.control.MeasureArea.prototype.initialize_ = function() {
       function(evt) {
         var pixel = map.getEventPixel(evt);
         var feature = map.forEachFeatureAtPixel(pixel, function(f) {
-          if(f.get('layer') == 'area_measure'){
+          if (f.get('layer') == 'area_measure') {
             return f;
           }
         }, null);
@@ -224,7 +205,6 @@ ol.control.MeasureArea.prototype.initialize_ = function() {
           // }
         }
       });
-  this.initialized_ = true;
 };
 
 
@@ -309,6 +289,11 @@ ol.control.MeasureArea.prototype.toggle = function() {
   var map = this.getMap();
 
   goog.dom.classlist.toggle(this.button, 'on');
+  if(!this.hasLayer_){
+    this.hasLayer_ = true;
+    map.addLayer(this.vector_);
+    this.addListeners();
+  }
 
   if (this.draw_ === null) {
     this.draw_ = new ol.interaction.Draw({
@@ -340,7 +325,6 @@ ol.control.MeasureArea.prototype.handleClick_ = function(pointerEvent) {
  * @param {ol.DrawEvent} drawEvent
  */
 ol.control.MeasureArea.prototype.drawEnd_ = function(drawEvent) {
-  var map = this.getMap();
   var feature = drawEvent.feature;
   feature.set('layer', 'area_measure');
 

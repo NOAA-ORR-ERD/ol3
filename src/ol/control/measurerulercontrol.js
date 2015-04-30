@@ -44,6 +44,12 @@ ol.control.MeasureRuler = function(opt_options) {
    */
   this.draw_ = null;
 
+  /**
+   * @private
+   * @type {boolean}
+   */
+  this.hasLayer_ = false;
+
   var cssClassName = goog.isDef(options.className) ?
       options.className : 'ol-measure-ruler';
 
@@ -91,12 +97,6 @@ ol.control.MeasureRuler = function(opt_options) {
     source: this.source_,
     name: 'measure-ruler'
   });
-
-  /**
-   * @private
-   * @type {boolean}
-   */
-  this.initialized_ = false;
 
   var element = goog.dom.createDom(goog.dom.TagName.DIV, {
     'class': cssClassName + ' ' + ol.css.CLASS_UNSELECTABLE
@@ -148,30 +148,12 @@ ol.control.MeasureRuler.formatFeatureText = function(feature) {
 
 
 /**
- * @public
- * @param {ol.MapEvent} mapEvent
- */
-ol.control.MeasureRuler.prototype.handleMapPostrender = function(mapEvent) {
-  if (!goog.isNull(mapEvent.frameState)) {
-    if (goog.isDefAndNotNull(mapEvent.frameState.view2DState)) {
-      return;
-    }
-  }
-  if (!this.initialized_) {
-    this.initialize_();
-  }
-};
-
-
-/**
- * Initializes adds a layer to the map that will contain any rulers added
- * and sets up listeners for hover and click events on that layer.
+ * Sets up listeners for hover and click events on relavent layer.
  *
  * @private
  */
-ol.control.MeasureRuler.prototype.initialize_ = function() {
+ol.control.MeasureRuler.prototype.addListeners = function() {
   var map = this.getMap();
-  map.addLayer(this.vector_);
 
   goog.events.listen(
       map.getViewport(),
@@ -179,7 +161,7 @@ ol.control.MeasureRuler.prototype.initialize_ = function() {
       function(evt) {
         var pixel = map.getEventPixel(evt);
         var feature = map.forEachFeatureAtPixel(pixel, function(f) {
-          if(f.get('layer') == 'ruler_measure'){
+          if (f.get('layer') == 'ruler_measure') {
             return f;
           }
         }, null);
@@ -194,7 +176,7 @@ ol.control.MeasureRuler.prototype.initialize_ = function() {
       function(evt) {
         var pixel = map.getEventPixel(evt);
         var feature = map.forEachFeatureAtPixel(pixel, function(f) {
-          if(f.get('layer') == 'ruler_measure'){
+          if (f.get('layer') == 'ruler_measure') {
             return f;
           }
         }, null);
@@ -222,7 +204,6 @@ ol.control.MeasureRuler.prototype.initialize_ = function() {
           // }
         }
       });
-  this.initialized_ = true;
 };
 
 
@@ -307,6 +288,11 @@ ol.control.MeasureRuler.prototype.toggle = function() {
   var map = this.getMap();
 
   goog.dom.classlist.toggle(this.button, 'on');
+  if(!this.hasLayer_){
+    this.hasLayer_ = true;
+    map.addLayer(this.vector_);
+    this.addListeners();
+  }
 
   if (this.draw_ === null) {
     this.draw_ = new ol.interaction.Draw({
@@ -338,7 +324,6 @@ ol.control.MeasureRuler.prototype.handleClick_ = function(pointerEvent) {
  * @param {ol.DrawEvent} drawEvent
  */
 ol.control.MeasureRuler.prototype.drawEnd_ = function(drawEvent) {
-  var map = this.getMap();
   var feature = drawEvent.feature;
   feature.set('layer', 'ruler_measure');
 
