@@ -83,7 +83,8 @@ ol.renderer.webgl.VectorLayer.prototype.composeFrame =
         viewState.center, viewState.resolution, viewState.rotation,
         frameState.size, frameState.pixelRatio, layerState.opacity,
         layerState.brightness, layerState.contrast, layerState.hue,
-        layerState.saturation, frameState.skippedFeatureUids);
+        layerState.saturation,
+        layerState.managed ? frameState.skippedFeatureUids : {});
   }
 
 };
@@ -127,7 +128,7 @@ ol.renderer.webgl.VectorLayer.prototype.forEachFeatureAtCoordinate =
          * @return {?} Callback result.
          */
         function(feature) {
-          goog.asserts.assert(goog.isDef(feature));
+          goog.asserts.assert(goog.isDef(feature), 'received a feature');
           var key = goog.getUid(feature).toString();
           if (!(key in features)) {
             features[key] = true;
@@ -194,16 +195,21 @@ ol.renderer.webgl.VectorLayer.prototype.prepareFrame =
     function(frameState, layerState, context) {
 
   var vectorLayer = /** @type {ol.layer.Vector} */ (this.getLayer());
-  goog.asserts.assertInstanceof(vectorLayer, ol.layer.Vector);
+  goog.asserts.assertInstanceof(vectorLayer, ol.layer.Vector,
+      'layer is an instance of ol.layer.Vector');
   var vectorSource = vectorLayer.getSource();
 
   this.updateAttributions(
       frameState.attributions, vectorSource.getAttributions());
   this.updateLogos(frameState, vectorSource);
 
-  if (!this.dirty_ && (!vectorLayer.getUpdateWhileAnimating() &&
-      frameState.viewHints[ol.ViewHint.ANIMATING] ||
-      frameState.viewHints[ol.ViewHint.INTERACTING])) {
+  var animating = frameState.viewHints[ol.ViewHint.ANIMATING];
+  var interacting = frameState.viewHints[ol.ViewHint.INTERACTING];
+  var updateWhileAnimating = vectorLayer.getUpdateWhileAnimating();
+  var updateWhileInteracting = vectorLayer.getUpdateWhileInteracting();
+
+  if (!this.dirty_ && (!updateWhileAnimating && animating) ||
+      (!updateWhileInteracting && interacting)) {
     return true;
   }
 

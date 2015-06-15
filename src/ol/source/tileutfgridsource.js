@@ -13,7 +13,6 @@ goog.require('ol.extent');
 goog.require('ol.proj');
 goog.require('ol.source.State');
 goog.require('ol.source.Tile');
-goog.require('ol.tilegrid.XYZ');
 
 
 
@@ -58,6 +57,7 @@ goog.inherits(ol.source.TileUTFGrid, ol.source.Tile);
 
 
 /**
+ * Return the template from TileJSON.
  * @return {string|undefined} The template from TileJSON.
  * @api
  */
@@ -82,7 +82,7 @@ ol.source.TileUTFGrid.prototype.getTemplate = function() {
 ol.source.TileUTFGrid.prototype.forDataAtCoordinateAndResolution = function(
     coordinate, resolution, callback, opt_this, opt_request) {
   if (!goog.isNull(this.tileGrid)) {
-    var tileCoord = this.tileGrid.getTileCoordForCoordAndResolution(
+    var tileCoord = this.tileGrid.getTileCoordForCoordAndResolutionInternal(
         coordinate, resolution);
     var tile = /** @type {!ol.source.TileUTFGridTile_} */(this.getTile(
         tileCoord[0], tileCoord[1], tileCoord[2], 1, this.getProjection()));
@@ -117,11 +117,11 @@ ol.source.TileUTFGrid.prototype.handleTileJSONResponse = function(tileJSON) {
   }
 
   if (goog.isDef(tileJSON.scheme)) {
-    goog.asserts.assert(tileJSON.scheme == 'xyz');
+    goog.asserts.assert(tileJSON.scheme == 'xyz', 'tileJSON-scheme is "xyz"');
   }
   var minZoom = tileJSON.minzoom || 0;
   var maxZoom = tileJSON.maxzoom || 22;
-  var tileGrid = new ol.tilegrid.XYZ({
+  var tileGrid = ol.tilegrid.createXYZ({
     extent: ol.tilegrid.extentFromProjection(sourceProjection),
     maxZoom: maxZoom,
     minZoom: minZoom
@@ -136,11 +136,7 @@ ol.source.TileUTFGrid.prototype.handleTileJSONResponse = function(tileJSON) {
     return;
   }
 
-  this.tileUrlFunction_ = ol.TileUrlFunction.withTileCoordTransform(
-      tileGrid.createTileCoordTransform({
-        extent: extent
-      }),
-      ol.TileUrlFunction.createFromTemplates(grids));
+  this.tileUrlFunction_ = ol.TileUrlFunction.createFromTemplates(grids);
 
   if (goog.isDef(tileJSON.attribution)) {
     var attributionExtent = goog.isDef(extent) ?
@@ -175,9 +171,11 @@ ol.source.TileUTFGrid.prototype.getTile =
   if (this.tileCache.containsKey(tileCoordKey)) {
     return /** @type {!ol.Tile} */ (this.tileCache.get(tileCoordKey));
   } else {
-    goog.asserts.assert(projection);
+    goog.asserts.assert(projection, 'argument projection is truthy');
     var tileCoord = [z, x, y];
-    var tileUrl = this.tileUrlFunction_(tileCoord, pixelRatio, projection);
+    var urlTileCoord =
+        this.getTileCoordForTileUrlFunction(tileCoord, projection);
+    var tileUrl = this.tileUrlFunction_(urlTileCoord, pixelRatio, projection);
     var tile = new ol.source.TileUTFGridTile_(
         tileCoord,
         goog.isDef(tileUrl) ? ol.TileState.IDLE : ol.TileState.EMPTY,
@@ -271,7 +269,7 @@ ol.source.TileUTFGridTile_.prototype.getImage = function(opt_context) {
  */
 ol.source.TileUTFGridTile_.prototype.getData = function(coordinate) {
   if (goog.isNull(this.grid_) || goog.isNull(this.keys_) ||
-      goog.isNull(this.data_)) {
+      !goog.isDefAndNotNull(this.data_)) {
     return null;
   }
   var xRelative = (coordinate[0] - this.extent_[0]) /

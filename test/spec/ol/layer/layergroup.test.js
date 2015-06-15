@@ -51,6 +51,7 @@ describe('ol.layer.Group', function() {
         opacity: 1,
         saturation: 1,
         visible: true,
+        managed: true,
         sourceState: ol.source.State.READY,
         extent: undefined,
         maxResolution: Infinity,
@@ -179,6 +180,7 @@ describe('ol.layer.Group', function() {
         opacity: 0.5,
         saturation: 5,
         visible: false,
+        managed: true,
         sourceState: ol.source.State.READY,
         extent: undefined,
         maxResolution: 500,
@@ -230,6 +232,7 @@ describe('ol.layer.Group', function() {
         opacity: 0.5,
         saturation: 5,
         visible: false,
+        managed: true,
         sourceState: ol.source.State.READY,
         extent: groupExtent,
         maxResolution: 500,
@@ -275,6 +278,7 @@ describe('ol.layer.Group', function() {
         opacity: 0.3,
         saturation: 0.3,
         visible: false,
+        managed: true,
         sourceState: ol.source.State.READY,
         extent: groupExtent,
         maxResolution: 500,
@@ -297,6 +301,7 @@ describe('ol.layer.Group', function() {
         opacity: 0,
         saturation: 0,
         visible: false,
+        managed: true,
         sourceState: ol.source.State.READY,
         extent: undefined,
         maxResolution: Infinity,
@@ -317,6 +322,7 @@ describe('ol.layer.Group', function() {
         opacity: 1,
         saturation: 42,
         visible: true,
+        managed: true,
         sourceState: ol.source.State.READY,
         extent: undefined,
         maxResolution: Infinity,
@@ -326,6 +332,31 @@ describe('ol.layer.Group', function() {
 
   });
 
+  describe('layers events', function() {
+
+    it('listen / unlisten for layers added to the collection', function() {
+      var layers = new ol.Collection();
+      var layerGroup = new ol.layer.Group({
+        layers: layers
+      });
+      expect(goog.object.getCount(layerGroup.listenerKeys_)).to.eql(0);
+      var layer = new ol.layer.Layer({});
+      layers.push(layer);
+      expect(goog.object.getCount(layerGroup.listenerKeys_)).to.eql(1);
+
+      var listeners = layerGroup.listenerKeys_[goog.getUid(layer)];
+      expect(listeners.length).to.eql(2);
+      expect(listeners[0]).to.be.a(goog.events.Listener);
+      expect(listeners[1]).to.be.a(goog.events.Listener);
+
+      // remove the layer from the group
+      layers.pop();
+      expect(goog.object.getCount(layerGroup.listenerKeys_)).to.eql(0);
+      expect(listeners[0].removed).to.eql(true);
+      expect(listeners[1].removed).to.eql(true);
+    });
+
+  });
 
   describe('#setLayers', function() {
 
@@ -340,9 +371,6 @@ describe('ol.layer.Group', function() {
 
       layerGroup.setLayers(layers);
       expect(layerGroup.getLayers()).to.be(layers);
-
-      layerGroup.setLayers(null);
-      expect(layerGroup.getLayers()).to.be(null);
 
       goog.dispose(layerGroup);
       goog.dispose(layer);
@@ -469,6 +497,7 @@ describe('ol.layer.Group', function() {
         opacity: 0.25,
         saturation: 25,
         visible: false,
+        managed: true,
         sourceState: ol.source.State.READY,
         extent: undefined,
         maxResolution: 150,
@@ -488,6 +517,7 @@ describe('ol.layer.Group', function() {
 
 goog.require('goog.dispose');
 goog.require('goog.events.EventType');
+goog.require('goog.events.Listener');
 goog.require('goog.object');
 goog.require('ol.ObjectEventType');
 goog.require('ol.extent');

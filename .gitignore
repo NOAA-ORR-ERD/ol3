@@ -2,5 +2,7 @@
 /examples/*.html.png
 /examples/example-list.js
 /examples/example-list.xml
+/build/
 /node_modules/
 /dist/
+/coverage/

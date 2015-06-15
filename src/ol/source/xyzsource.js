@@ -3,7 +3,6 @@ goog.provide('ol.source.XYZ');
 goog.require('ol.Attribution');
 goog.require('ol.TileUrlFunction');
 goog.require('ol.source.TileImage');
-goog.require('ol.tilegrid.XYZ');
 
 
 
@@ -20,7 +19,7 @@ ol.source.XYZ = function(options) {
   var projection = goog.isDef(options.projection) ?
       options.projection : 'EPSG:3857';
 
-  var tileGrid = new ol.tilegrid.XYZ({
+  var tileGrid = ol.tilegrid.createXYZ({
     extent: ol.tilegrid.extentFromProjection(projection),
     maxZoom: options.maxZoom,
     tileSize: options.tileSize
@@ -38,12 +37,6 @@ ol.source.XYZ = function(options) {
     wrapX: goog.isDef(options.wrapX) ? options.wrapX : true
   });
 
-  /**
-   * @private
-   * @type {ol.TileCoordTransformType}
-   */
-  this.tileCoordTransform_ = tileGrid.createTileCoordTransform();
-
   if (goog.isDef(options.tileUrlFunction)) {
     this.setTileUrlFunction(options.tileUrlFunction);
   } else if (goog.isDef(options.urls)) {
@@ -57,17 +50,7 @@ goog.inherits(ol.source.XYZ, ol.source.TileImage);
 
 
 /**
- * @inheritDoc
- * @api
- */
-ol.source.XYZ.prototype.setTileUrlFunction = function(tileUrlFunction) {
-  goog.base(this, 'setTileUrlFunction',
-      ol.TileUrlFunction.withTileCoordTransform(
-          this.tileCoordTransform_, tileUrlFunction));
-};
-
-
-/**
+ * Set the URL to use for requests.
  * @param {string} url URL.
  * @api stable
  */
@@ -78,6 +61,7 @@ ol.source.XYZ.prototype.setUrl = function(url) {
 
 
 /**
+ * Set the URLs to use for requests.
  * @param {Array.<string>} urls URLs.
  */
 ol.source.XYZ.prototype.setUrls = function(urls) {
