@@ -321,7 +321,7 @@ ol.control.MeasureRuler.prototype.handleClick_ = function(pointerEvent) {
 
 /**
  * @private
- * @param {ol.DrawEvent} drawEvent
+ * @param {ol.interaction.DrawEvent} drawEvent
  */
 ol.control.MeasureRuler.prototype.drawEnd_ = function(drawEvent) {
   var feature = drawEvent.feature;
