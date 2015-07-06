@@ -1,5 +1,7 @@
 ## Upgrade notes
 
+### v3.8.0
+
 ### v3.7.0
 
 #### Removal of `ol.FeatureOverlay`
@@ -96,6 +98,10 @@ The replacement of `ol.tilegrid.Zoomify` is a plain `ol.tilegrid.TileGrid`, conf
 #### Replace `ol.View.fitExtent()` and `ol.View.fitGeometry()` with `ol.View.fit()`
 * This combines two previously distinct functions into one more flexible call which takes either a geometry or an extent.
 * Rename all calls to `fitExtent` and `fitGeometry` to `fit`.
+
+#### Change to `ol.interaction.Modify`
+
+When single clicking a line or boundary within the `pixelTolerance`, a vertex is now created.
 
 ### v3.6.0
 
