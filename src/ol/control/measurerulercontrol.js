@@ -7,7 +7,6 @@ goog.require('goog.events');
 goog.require('goog.events.EventType');
 goog.require('ol.control.Control');
 goog.require('ol.css');
-goog.require('ol.geom.Geometry');
 goog.require('ol.geom.LineString');
 goog.require('ol.interaction.Draw');
 goog.require('ol.layer.Vector');
