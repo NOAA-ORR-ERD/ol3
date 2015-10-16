@@ -3,6 +3,7 @@ goog.provide('ol.source.ImageStatic');
 goog.require('goog.events');
 goog.require('goog.events.EventType');
 goog.require('ol.Image');
+goog.require('ol.ImageLoadFunctionType');
 goog.require('ol.extent');
 goog.require('ol.proj');
 goog.require('ol.source.Image');
@@ -20,21 +21,22 @@ goog.require('ol.source.Image');
  */
 ol.source.ImageStatic = function(options) {
 
-  var attributions = goog.isDef(options.attributions) ?
+  var attributions = options.attributions !== undefined ?
       options.attributions : null;
 
   var imageExtent = options.imageExtent;
 
   var resolution, resolutions;
-  if (goog.isDef(options.imageSize)) {
+  if (options.imageSize !== undefined) {
     resolution = ol.extent.getHeight(imageExtent) / options.imageSize[1];
     resolutions = [resolution];
   }
 
-  var crossOrigin = goog.isDef(options.crossOrigin) ?
+  var crossOrigin = options.crossOrigin !== undefined ?
       options.crossOrigin : null;
 
-  var imageLoadFunction = goog.isDef(options.imageLoadFunction) ?
+  var /** @type {ol.ImageLoadFunctionType} */ imageLoadFunction =
+      options.imageLoadFunction !== undefined ?
       options.imageLoadFunction : ol.source.Image.defaultImageLoadFunction;
 
   goog.base(this, {

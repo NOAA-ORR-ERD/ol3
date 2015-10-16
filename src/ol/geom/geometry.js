@@ -50,9 +50,11 @@ ol.geom.GeometryLayout = {
  * instantiated in apps.
  * Base class for vector geometries.
  *
+ * To get notified of changes to the geometry, register a listener for the
+ * generic `change` event on your geometry instance.
+ *
  * @constructor
  * @extends {ol.Object}
- * @fires change Triggered when the geometry changes.
  * @api stable
  */
 ol.geom.Geometry = function() {
@@ -120,8 +122,7 @@ ol.geom.Geometry.prototype.closestPointXY = goog.abstractMethod;
  * @api stable
  */
 ol.geom.Geometry.prototype.getClosestPoint = function(point, opt_closestPoint) {
-  var closestPoint = goog.isDef(opt_closestPoint) ?
-      opt_closestPoint : [NaN, NaN];
+  var closestPoint = opt_closestPoint ? opt_closestPoint : [NaN, NaN];
   this.closestPointXY(point[0], point[1], closestPoint, Infinity);
   return closestPoint;
 };
@@ -168,9 +169,26 @@ ol.geom.Geometry.prototype.getExtent = function(opt_extent) {
 
 
 /**
+ * Create a simplified version of this geometry.  For linestrings, this uses
+ * the the {@link
+ * https://en.wikipedia.org/wiki/Ramer-Douglas-Peucker_algorithm
+ * Douglas Peucker} algorithm.  For polygons, a quantization-based
+ * simplification is used to preserve topology.
+ * @function
+ * @param {number} tolerance The tolerance distance for simplification.
+ * @return {ol.geom.Geometry} A new, simplified version of the original
+ *     geometry.
+ * @api
+ */
+ol.geom.Geometry.prototype.simplify = function(tolerance) {
+  return this.getSimplifiedGeometry(tolerance * tolerance);
+};
+
+
+/**
  * Create a simplified version of this geometry using the Douglas Peucker
  * algorithm.
- * @see http://en.wikipedia.org/wiki/Ramer%E2%80%93Douglas%E2%80%93Peucker_algorithm
+ * @see https://en.wikipedia.org/wiki/Ramer-Douglas-Peucker_algorithm
  * @function
  * @param {number} squaredTolerance Squared tolerance.
  * @return {ol.geom.Geometry} Simplified geometry.

@@ -1,6 +1,5 @@
 goog.provide('ol.source.TileArcGISRest');
 
-goog.require('goog.array');
 goog.require('goog.asserts');
 goog.require('goog.math');
 goog.require('goog.object');
@@ -33,9 +32,9 @@ goog.require('ol.tilecoord');
  */
 ol.source.TileArcGISRest = function(opt_options) {
 
-  var options = goog.isDef(opt_options) ? opt_options : {};
+  var options = opt_options || {};
 
-  var params = goog.isDef(options.params) ? options.params : {};
+  var params = options.params !== undefined ? options.params : {};
 
   goog.base(this, {
     attributions: options.attributions,
@@ -45,11 +44,11 @@ ol.source.TileArcGISRest = function(opt_options) {
     tileGrid: options.tileGrid,
     tileLoadFunction: options.tileLoadFunction,
     tileUrlFunction: goog.bind(this.tileUrlFunction_, this),
-    wrapX: goog.isDef(options.wrapX) ? options.wrapX : true
+    wrapX: options.wrapX !== undefined ? options.wrapX : true
   });
 
   var urls = options.urls;
-  if (!goog.isDef(urls) && goog.isDef(options.url)) {
+  if (urls === undefined && options.url !== undefined) {
     urls = ol.TileUrlFunction.expandUrl(options.url);
   }
 
@@ -57,7 +56,7 @@ ol.source.TileArcGISRest = function(opt_options) {
    * @private
    * @type {!Array.<string>}
    */
-  this.urls_ = goog.isDefAndNotNull(urls) ? urls : [];
+  this.urls_ = urls || [];
 
   /**
    * @private
@@ -101,7 +100,7 @@ ol.source.TileArcGISRest.prototype.getRequestUrl_ =
         pixelRatio, projection, params) {
 
   var urls = this.urls_;
-  if (goog.array.isEmpty(urls)) {
+  if (urls.length === 0) {
     return undefined;
   }
 
@@ -174,7 +173,7 @@ ol.source.TileArcGISRest.prototype.getUrls = function() {
  * @api stable
  */
 ol.source.TileArcGISRest.prototype.setUrl = function(url) {
-  var urls = goog.isDef(url) ? ol.TileUrlFunction.expandUrl(url) : null;
+  var urls = url !== undefined ? ol.TileUrlFunction.expandUrl(url) : null;
   this.setUrls(urls);
 };
 
@@ -185,7 +184,7 @@ ol.source.TileArcGISRest.prototype.setUrl = function(url) {
  * @api stable
  */
 ol.source.TileArcGISRest.prototype.setUrls = function(urls) {
-  this.urls_ = goog.isDefAndNotNull(urls) ? urls : [];
+  this.urls_ = urls || [];
   this.changed();
 };
 
@@ -201,7 +200,7 @@ ol.source.TileArcGISRest.prototype.tileUrlFunction_ =
     function(tileCoord, pixelRatio, projection) {
 
   var tileGrid = this.getTileGrid();
-  if (goog.isNull(tileGrid)) {
+  if (!tileGrid) {
     tileGrid = this.getTileGridForProjection(projection);
   }
 

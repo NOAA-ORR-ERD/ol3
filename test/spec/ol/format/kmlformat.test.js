@@ -1810,7 +1810,7 @@ describe('ol.format.KML', function() {
             '    <Placemark>' +
             '      <StyleMap>' +
             '        <Pair>' +
-            '          <key>highlighted</key>' +
+            '          <key>highlight</key>' +
             '          <Style>' +
             '            <PolyStyle>' +
             '              <color>00000000</color>' +
@@ -1851,7 +1851,7 @@ describe('ol.format.KML', function() {
             '          </Style>' +
             '        </Pair>' +
             '        <Pair>' +
-            '          <key>highlighted</key>' +
+            '          <key>highlight</key>' +
             '          <Style>' +
             '            <PolyStyle>' +
             '              <color>ffffffff</color>' +
@@ -1911,7 +1911,7 @@ describe('ol.format.KML', function() {
         expect(s.getFill().getColor()).to.eql([0, 0, 0, 0]);
       });
 
-      it('ignores highlighted styleUrls', function() {
+      it('ignores highlight styleUrls', function() {
         var text =
             '<kml xmlns="http://earth.google.com/kml/2.2">' +
             '  <Document>' +
@@ -1923,7 +1923,7 @@ describe('ol.format.KML', function() {
             '    <Placemark>' +
             '      <StyleMap>' +
             '        <Pair>' +
-            '          <key>highlighted</key>' +
+            '          <key>highlight</key>' +
             '          <styleUrl>#foo</styleUrl>' +
             '        </Pair>' +
             '      </StyleMap>' +
@@ -2096,6 +2096,19 @@ describe('ol.format.KML', function() {
             '<Document xmlns="http://earth.google.com/kml/2.2">' +
             '  <Placemark>' +
             '  </Placemark>' +
+            '</Document>';
+        var fs = format.readFeatures(text);
+        expect(fs).to.have.length(1);
+        expect(fs[0]).to.be.an(ol.Feature);
+      });
+
+      it('can read a single feature from nested Document', function() {
+        var text =
+            '<Document xmlns="http://earth.google.com/kml/2.2">' +
+            '  <Document>' +
+            '    <Placemark>' +
+            '    </Placemark>' +
+            '  </Document>' +
             '</Document>';
         var fs = format.readFeatures(text);
         expect(fs).to.have.length(1);
@@ -2474,6 +2487,31 @@ describe('ol.format.KML', function() {
 
   });
 
+  describe('#JSONExport', function() {
+
+    var features;
+    before(function(done) {
+      afterLoadText('spec/ol/format/kml/style.kml', function(xml) {
+        try {
+          features = format.readFeatures(xml);
+        } catch (e) {
+          done(e);
+        }
+        done();
+      });
+    });
+
+    it('feature must not have a properties property', function() {
+      var geojsonFormat = new ol.format.GeoJSON();
+      features.forEach(function(feature) {
+        var geojsonFeature = geojsonFormat.writeFeatureObject(feature);
+        expect(geojsonFeature.properties).to.be(null);
+        JSON.stringify(geojsonFeature);
+      });
+    });
+
+  });
+
   describe('#readName', function() {
 
     it('returns undefined if there is no name', function() {
@@ -2578,6 +2616,7 @@ describe('ol.format.KML', function() {
 goog.require('goog.array');
 goog.require('goog.dom.xml');
 goog.require('ol.Feature');
+goog.require('ol.format.GeoJSON');
 goog.require('ol.format.KML');
 goog.require('ol.geom.GeometryCollection');
 goog.require('ol.geom.GeometryLayout');
