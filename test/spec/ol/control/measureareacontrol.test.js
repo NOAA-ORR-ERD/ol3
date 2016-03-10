@@ -1,29 +1,29 @@
 goog.provide('ol.test.control.MeasureArea');
 
-describe('ol.control.MeasureArea', function(){
+describe('ol.control.MeasureArea', function() {
 
-  describe('constructor', function(){
+  describe('constructor', function() {
 
-    it('can be constructed without arguments', function(){
+    it('can be constructed without arguments', function() {
       var instance = new ol.control.MeasureArea();
       expect(instance).to.be.an(ol.control.MeasureArea);
     });
   });
 
-  describe('DOM', function(){
-
+  describe('DOM', function() {
+    var target;
     beforeEach(function() {
       target = document.createElement('div');
       document.body.appendChild(target);
-      measure = new ol.control.MeasureArea();
-      map = new ol.Map({
+      var measure = new ol.control.MeasureArea();
+      new ol.Map({
         target: target,
         controls: [measure]
       });
     });
 
 
-    it('creates the expected element', function(){
+    it('creates the expected element', function() {
       var button = goog.dom.getElementsByClass('ol-measure-area', target);
       expect(button.length).to.be(1);
       expect(button[0] instanceof HTMLDivElement).to.be(true);

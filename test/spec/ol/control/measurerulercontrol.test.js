@@ -1,29 +1,29 @@
 goog.provide('ol.test.control.MeasureRuler');
 
-describe('ol.control.MeasureRuler', function(){
+describe('ol.control.MeasureRuler', function() {
 
-  describe('constructor', function(){
+  describe('constructor', function() {
 
-    it('can be constructed without arguments', function(){
+    it('can be constructed without arguments', function() {
       var instance = new ol.control.MeasureRuler();
       expect(instance).to.be.an(ol.control.MeasureRuler);
     });
   });
 
-  describe('DOM', function(){
-
+  describe('DOM', function() {
+    var target;
     beforeEach(function() {
       target = document.createElement('div');
       document.body.appendChild(target);
-      measure = new ol.control.MeasureRuler();
-      map = new ol.Map({
+      var measure = new ol.control.MeasureRuler();
+      new ol.Map({
         target: target,
         controls: [measure]
       });
     });
 
 
-    it('creates the expected element', function(){
+    it('creates the expected element', function() {
       var button = goog.dom.getElementsByClass('ol-measure-ruler', target);
       expect(button.length).to.be(1);
       expect(button[0] instanceof HTMLDivElement).to.be(true);

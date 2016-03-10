@@ -3,10 +3,10 @@ goog.provide('ol.control.MeasureRuler');
 goog.require('goog.dom');
 goog.require('goog.dom.TagName');
 goog.require('goog.dom.classlist');
-goog.require('goog.events');
-goog.require('goog.events.EventType');
 goog.require('ol.control.Control');
 goog.require('ol.css');
+goog.require('ol.events');
+goog.require('ol.events.EventType');
 goog.require('ol.geom.LineString');
 goog.require('ol.interaction.Draw');
 goog.require('ol.layer.Vector');
@@ -17,7 +17,6 @@ goog.require('ol.style.Fill');
 goog.require('ol.style.Stroke');
 goog.require('ol.style.Style');
 goog.require('ol.style.Text');
-
 
 
 /**
@@ -71,16 +70,13 @@ ol.control.MeasureRuler = function(opt_options) {
   goog.dom.appendChild(this.button, tip);
 
   var buttonHandler = new ol.pointer.PointerEventHandler(this.button);
-  this.registerDisposable(buttonHandler);
-  goog.events.listen(buttonHandler,
-      ol.pointer.EventType.POINTERUP, this.handleClick_, false, this);
+  ol.events.listen(buttonHandler,
+      ol.pointer.EventType.POINTERUP, this.handleClick_, this);
 
-  goog.events.listen(this.button, [
-    goog.events.EventType.MOUSEOUT,
-    goog.events.EventType.FOCUSOUT
-  ], function() {
+  ol.events.listen(this.button, ol.events.EventType.MOUSEOUT,
+  function() {
     this.blur();
-  }, false);
+  }, this);
 
   /**
    * @private
@@ -114,7 +110,7 @@ goog.inherits(ol.control.MeasureRuler, ol.control.Control);
  *
  * @public
  * @param {ol.Feature} feature Feature to format text for
- * @return {string}
+ * @return {string} formated string of distances
  */
 ol.control.MeasureRuler.formatFeatureText = function(feature) {
   var geom = /** @type {ol.geom.LineString} */ (feature.getGeometry());
@@ -154,9 +150,9 @@ ol.control.MeasureRuler.formatFeatureText = function(feature) {
 ol.control.MeasureRuler.prototype.addListeners = function() {
   var map = this.getMap();
 
-  goog.events.listen(
+  ol.events.listen(
       map.getViewport(),
-      goog.events.EventType.MOUSEUP,
+      ol.events.EventType.MOUSEUP,
       function(evt) {
         var pixel = map.getEventPixel(evt);
         var feature = map.forEachFeatureAtPixel(pixel, function(f) {
@@ -167,11 +163,11 @@ ol.control.MeasureRuler.prototype.addListeners = function() {
         if (feature) {
           this.source_.removeFeature(feature);
         }
-      }, false, this);
+      }, this);
 
-  goog.events.listen(
+  ol.events.listen(
       map.getViewport(),
-      goog.events.EventType.MOUSEMOVE,
+      ol.events.EventType.MOUSEMOVE,
       function(evt) {
         var pixel = map.getEventPixel(evt);
         var feature = map.forEachFeatureAtPixel(pixel, function(f) {
@@ -287,7 +283,7 @@ ol.control.MeasureRuler.prototype.toggle = function() {
   var map = this.getMap();
 
   goog.dom.classlist.toggle(this.button, 'on');
-  if(!this.hasLayer_){
+  if (!this.hasLayer_) {
     this.hasLayer_ = true;
     map.addLayer(this.vector_);
     this.addListeners();
@@ -320,7 +316,7 @@ ol.control.MeasureRuler.prototype.handleClick_ = function(pointerEvent) {
 
 /**
  * @private
- * @param {ol.interaction.DrawEvent} drawEvent
+ * @param {ol.interaction.DrawEvent} drawEvent Draw Event
  */
 ol.control.MeasureRuler.prototype.drawEnd_ = function(drawEvent) {
   var feature = drawEvent.feature;
