@@ -1,15 +1,15 @@
 goog.provide('ol.renderer.dom.Map');
 
-goog.require('goog.array');
 goog.require('goog.asserts');
 goog.require('goog.dom');
-goog.require('goog.events');
-goog.require('goog.events.Event');
-goog.require('goog.events.EventType');
+goog.require('ol.events');
+goog.require('ol.events.Event');
+goog.require('ol.events.EventType');
 goog.require('goog.style');
 goog.require('goog.vec.Mat4');
 goog.require('ol');
 goog.require('ol.RendererType');
+goog.require('ol.array');
 goog.require('ol.css');
 goog.require('ol.dom');
 goog.require('ol.layer.Image');
@@ -26,7 +26,6 @@ goog.require('ol.renderer.dom.TileLayer');
 goog.require('ol.renderer.dom.VectorLayer');
 goog.require('ol.source.State');
 goog.require('ol.vec.Mat4');
-
 
 
 /**
@@ -61,7 +60,7 @@ ol.renderer.dom.Map = function(container, map) {
    * @type {!Element}
    * @private
    */
-  this.layersPane_ = goog.dom.createElement('DIV');
+  this.layersPane_ = document.createElement('DIV');
   this.layersPane_.className = ol.css.CLASS_UNSELECTABLE;
   var style = this.layersPane_.style;
   style.position = 'absolute';
@@ -69,8 +68,8 @@ ol.renderer.dom.Map = function(container, map) {
   style.height = '100%';
 
   // prevent the img context menu on mobile devices
-  goog.events.listen(this.layersPane_, goog.events.EventType.TOUCHSTART,
-      goog.events.Event.preventDefault);
+  ol.events.listen(this.layersPane_, ol.events.EventType.TOUCHSTART,
+      ol.events.Event.preventDefault);
 
   goog.dom.insertChildAt(container, this.layersPane_, 0);
 
@@ -117,8 +116,7 @@ ol.renderer.dom.Map.prototype.createLayerRenderer = function(layer) {
  * @param {olx.FrameState} frameState Frame state.
  * @private
  */
-ol.renderer.dom.Map.prototype.dispatchComposeEvent_ =
-    function(type, frameState) {
+ol.renderer.dom.Map.prototype.dispatchComposeEvent_ = function(type, frameState) {
   var map = this.getMap();
   if (map.hasListener(type)) {
     var extent = frameState.extent;
@@ -178,7 +176,7 @@ ol.renderer.dom.Map.prototype.renderFrame = function(frameState) {
   this.dispatchComposeEvent_(ol.render.EventType.PRECOMPOSE, frameState);
 
   var layerStatesArray = frameState.layerStatesArray;
-  goog.array.stableSort(layerStatesArray, ol.renderer.Map.sortByZIndex);
+  ol.array.stableSort(layerStatesArray, ol.renderer.Map.sortByZIndex);
 
   var viewResolution = frameState.viewState.resolution;
   var i, ii, layer, layerRenderer, layerState;

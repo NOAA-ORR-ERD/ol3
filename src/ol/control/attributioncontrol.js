@@ -5,16 +5,15 @@ goog.provide('ol.control.Attribution');
 goog.require('goog.asserts');
 goog.require('goog.dom');
 goog.require('goog.dom.classlist');
-goog.require('goog.events');
-goog.require('goog.events.EventType');
-goog.require('goog.object');
 goog.require('goog.style');
 goog.require('ol');
 goog.require('ol.Attribution');
 goog.require('ol.control.Control');
 goog.require('ol.css');
+goog.require('ol.events');
+goog.require('ol.events.EventType');
+goog.require('ol.object');
 goog.require('ol.source.Tile');
-
 
 
 /**
@@ -37,13 +36,13 @@ ol.control.Attribution = function(opt_options) {
    * @private
    * @type {Element}
    */
-  this.ulElement_ = goog.dom.createElement('UL');
+  this.ulElement_ = document.createElement('UL');
 
   /**
    * @private
    * @type {Element}
    */
-  this.logoLi_ = goog.dom.createElement('LI');
+  this.logoLi_ = document.createElement('LI');
 
   this.ulElement_.appendChild(this.logoLi_);
   goog.style.setElementShown(this.logoLi_, false);
@@ -65,27 +64,27 @@ ol.control.Attribution = function(opt_options) {
     this.collapsed_ = false;
   }
 
-  var className = options.className ? options.className : 'ol-attribution';
+  var className = options.className !== undefined ? options.className : 'ol-attribution';
 
-  var tipLabel = options.tipLabel ? options.tipLabel : 'Attributions';
+  var tipLabel = options.tipLabel !== undefined ? options.tipLabel : 'Attributions';
 
-  var collapseLabel = options.collapseLabel ? options.collapseLabel : '\u00BB';
+  var collapseLabel = options.collapseLabel !== undefined ? options.collapseLabel : '\u00BB';
 
   /**
    * @private
    * @type {Node}
    */
-  this.collapseLabel_ = goog.isString(collapseLabel) ?
+  this.collapseLabel_ = typeof collapseLabel === 'string' ?
       goog.dom.createDom('SPAN', {}, collapseLabel) :
       collapseLabel;
 
-  var label = options.label ? options.label : 'i';
+  var label = options.label !== undefined ? options.label : 'i';
 
   /**
    * @private
    * @type {Node}
    */
-  this.label_ = goog.isString(label) ?
+  this.label_ = typeof label === 'string' ?
       goog.dom.createDom('SPAN', {}, label) :
       label;
 
@@ -96,15 +95,7 @@ ol.control.Attribution = function(opt_options) {
     'title': tipLabel
   }, activeLabel);
 
-  goog.events.listen(button, goog.events.EventType.CLICK,
-      this.handleClick_, false, this);
-
-  goog.events.listen(button, [
-    goog.events.EventType.MOUSEOUT,
-    goog.events.EventType.FOCUSOUT
-  ], function() {
-    this.blur();
-  }, false);
+  ol.events.listen(button, ol.events.EventType.CLICK, this.handleClick_, this);
 
   var cssClasses = className + ' ' + ol.css.CLASS_UNSELECTABLE + ' ' +
       ol.css.CLASS_CONTROL +
@@ -159,7 +150,7 @@ ol.control.Attribution.prototype.getSourceAttributions = function(frameState) {
   var intersectsTileRange;
   var layerStatesArray = frameState.layerStatesArray;
   /** @type {Object.<string, ol.Attribution>} */
-  var attributions = goog.object.clone(frameState.attributions);
+  var attributions = ol.object.assign({}, frameState.attributions);
   /** @type {Object.<string, ol.Attribution>} */
   var hiddenAttributions = {};
   var projection = frameState.viewState.projection;
@@ -245,23 +236,21 @@ ol.control.Attribution.prototype.updateElement_ = function(frameState) {
         this.attributionElementRenderedVisible_[attributionKey] = true;
       }
       delete visibleAttributions[attributionKey];
-    }
-    else if (attributionKey in hiddenAttributions) {
+    } else if (attributionKey in hiddenAttributions) {
       if (this.attributionElementRenderedVisible_[attributionKey]) {
         goog.style.setElementShown(
             this.attributionElements_[attributionKey], false);
         delete this.attributionElementRenderedVisible_[attributionKey];
       }
       delete hiddenAttributions[attributionKey];
-    }
-    else {
+    } else {
       goog.dom.removeNode(this.attributionElements_[attributionKey]);
       delete this.attributionElements_[attributionKey];
       delete this.attributionElementRenderedVisible_[attributionKey];
     }
   }
   for (attributionKey in visibleAttributions) {
-    attributionElement = goog.dom.createElement('LI');
+    attributionElement = document.createElement('LI');
     attributionElement.innerHTML =
         visibleAttributions[attributionKey].getHTML();
     this.ulElement_.appendChild(attributionElement);
@@ -269,7 +258,7 @@ ol.control.Attribution.prototype.updateElement_ = function(frameState) {
     this.attributionElementRenderedVisible_[attributionKey] = true;
   }
   for (attributionKey in hiddenAttributions) {
-    attributionElement = goog.dom.createElement('LI');
+    attributionElement = document.createElement('LI');
     attributionElement.innerHTML =
         hiddenAttributions[attributionKey].getHTML();
     goog.style.setElementShown(attributionElement, false);
@@ -278,14 +267,14 @@ ol.control.Attribution.prototype.updateElement_ = function(frameState) {
   }
 
   var renderVisible =
-      !goog.object.isEmpty(this.attributionElementRenderedVisible_) ||
-      !goog.object.isEmpty(frameState.logos);
+      !ol.object.isEmpty(this.attributionElementRenderedVisible_) ||
+      !ol.object.isEmpty(frameState.logos);
   if (this.renderedVisible_ != renderVisible) {
     goog.style.setElementShown(this.element, renderVisible);
     this.renderedVisible_ = renderVisible;
   }
   if (renderVisible &&
-      goog.object.isEmpty(this.attributionElementRenderedVisible_)) {
+      ol.object.isEmpty(this.attributionElementRenderedVisible_)) {
     goog.dom.classlist.add(this.element, 'ol-logo-only');
   } else {
     goog.dom.classlist.remove(this.element, 'ol-logo-only');
@@ -332,13 +321,13 @@ ol.control.Attribution.prototype.insertLogos_ = function(frameState) {
     }
   }
 
-  goog.style.setElementShown(this.logoLi_, !goog.object.isEmpty(logos));
+  goog.style.setElementShown(this.logoLi_, !ol.object.isEmpty(logos));
 
 };
 
 
 /**
- * @param {goog.events.BrowserEvent} event The event to handle
+ * @param {Event} event The event to handle
  * @private
  */
 ol.control.Attribution.prototype.handleClick_ = function(event) {

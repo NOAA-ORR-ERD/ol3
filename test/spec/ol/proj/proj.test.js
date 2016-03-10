@@ -49,13 +49,28 @@ describe('ol.proj', function() {
     });
 
     it('gives that CRS:84, urn:ogc:def:crs:EPSG:6.6:4326, EPSG:4326 are ' +
-       'equivalent', function() {
+        'equivalent',
+        function() {
           _testAllEquivalent([
             'CRS:84',
             'urn:ogc:def:crs:EPSG:6.6:4326',
             'EPSG:4326'
           ]);
         });
+
+    it('requires code and units to be equal for projection evquivalence',
+        function() {
+          var proj1 = new ol.proj.Projection({
+            code: 'EPSG:3857',
+            units: 'm'
+          });
+          var proj2 = new ol.proj.Projection({
+            code: 'EPSG:3857',
+            units: 'tile-pixels'
+          });
+          expect(ol.proj.equivalent(proj1, proj2)).to.not.be.ok();
+        });
+
   });
 
   describe('identify transform', function() {
@@ -194,6 +209,14 @@ describe('ol.proj', function() {
 
   describe('Proj4js integration', function() {
 
+    var proj4 = window.proj4;
+
+    afterEach(function() {
+      delete proj4.defs['EPSG:21781'];
+      window.proj4 = proj4;
+      ol.proj.setProj4(window.proj4);
+    });
+
     it('creates ol.proj.Projection instance from EPSG:21781', function() {
       proj4.defs('EPSG:21781',
           '+proj=somerc +lat_0=46.95240555555556 +lon_0=7.439583333333333 ' +
@@ -203,8 +226,21 @@ describe('ol.proj', function() {
       expect(proj.getCode()).to.eql('EPSG:21781');
       expect(proj.getUnits()).to.eql('m');
       expect(proj.getMetersPerUnit()).to.eql(1);
+    });
 
-      delete proj4.defs['EPSG:21781'];
+    it('can use an alternative namespace for proj4', function() {
+      var proj4 = window.proj4;
+      var proj4new = proj4;
+      delete window.proj4;
+      ol.proj.setProj4(proj4new);
+      proj4new.defs('EPSG:21781',
+          '+proj=somerc +lat_0=46.95240555555556 +lon_0=7.439583333333333 ' +
+          '+k_0=1 +x_0=600000 +y_0=200000 +ellps=bessel ' +
+          '+towgs84=674.374,15.056,405.346,0,0,0,0 +units=m +no_defs');
+      var proj = ol.proj.get('EPSG:21781');
+      expect(proj.getCode()).to.eql('EPSG:21781');
+      expect(proj.getUnits()).to.eql('m');
+      expect(proj.getMetersPerUnit()).to.eql(1);
     });
 
     it('creates ol.proj.Projection instance from EPSG:3739', function() {
@@ -236,7 +272,6 @@ describe('ol.proj', function() {
           'EPSG:4326', 'EPSG:21781');
       expect(point[0]).to.roughlyEqual(600072.300, 1);
       expect(point[1]).to.roughlyEqual(200146.976, 1);
-      delete proj4.defs['EPSG:21781'];
     });
 
     it('works with ol.proj.fromLonLat and ol.proj.toLonLat', function() {
@@ -251,7 +286,6 @@ describe('ol.proj', function() {
       point = ol.proj.toLonLat(point, 'EPSG:21781');
       expect(point[0]).to.roughlyEqual(lonLat[0], 1);
       expect(point[1]).to.roughlyEqual(lonLat[1], 1);
-      delete proj4.defs['EPSG:21781'];
     });
 
     it('caches the new Proj4js projections given their srsCode', function() {
@@ -266,7 +300,6 @@ describe('ol.proj', function() {
       var proj2 = ol.proj.get(srsCode);
       expect(ol.proj.equivalent(proj2, proj)).to.be(true);
       delete proj4.defs[code];
-      delete proj4.defs[srsCode];
     });
 
     it('numerically estimates point scale at the equator', function() {
@@ -428,7 +461,9 @@ describe('ol.proj', function() {
         units: units,
         extent: extent
       });
-      var transform = function(input, output, dimension) {return input;};
+      var transform = function(input, output, dimension) {
+        return input;
+      };
       ol.proj.addTransform(foo, bar, transform);
       expect(ol.proj.transforms_).not.to.be(undefined);
       expect(ol.proj.transforms_.foo).not.to.be(undefined);
@@ -521,7 +556,8 @@ describe('ol.proj', function() {
 
     it('returns value in meters', function() {
       var epsg4326 = ol.proj.get('EPSG:4326');
-      expect(epsg4326.getMetersPerUnit()).to.eql(111194.87428468118);
+      expect(epsg4326.getMetersPerUnit()).to.eql(
+          ol.proj.EPSG4326.METERS_PER_UNIT);
     });
 
     it('works for proj4js projections without units', function() {
@@ -549,6 +585,7 @@ describe('ol.proj', function() {
 
 
 goog.require('ol.proj');
+goog.require('ol.proj.EPSG4326');
 goog.require('ol.proj.Projection');
 goog.require('ol.proj.Units');
 goog.require('ol.proj.common');

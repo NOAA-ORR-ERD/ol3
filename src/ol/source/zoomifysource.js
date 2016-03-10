@@ -21,7 +21,6 @@ ol.source.ZoomifyTierSizeCalculation = {
 };
 
 
-
 /**
  * @classdesc
  * Layer source for tile data in Zoomify format.
@@ -122,8 +121,10 @@ ol.source.Zoomify = function(opt_options) {
 
   goog.base(this, {
     attributions: options.attributions,
+    cacheSize: options.cacheSize,
     crossOrigin: options.crossOrigin,
     logo: options.logo,
+    reprojectionErrorThreshold: options.reprojectionErrorThreshold,
     tileClass: ol.source.ZoomifyTile_,
     tileGrid: tileGrid,
     tileUrlFunction: tileUrlFunction
@@ -131,7 +132,6 @@ ol.source.Zoomify = function(opt_options) {
 
 };
 goog.inherits(ol.source.Zoomify, ol.source.TileImage);
-
 
 
 /**

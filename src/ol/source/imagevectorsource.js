@@ -1,8 +1,8 @@
 goog.provide('ol.source.ImageVector');
 
 goog.require('goog.asserts');
-goog.require('goog.events');
-goog.require('goog.events.EventType');
+goog.require('ol.events');
+goog.require('ol.events.EventType');
 goog.require('goog.vec.Mat4');
 goog.require('ol.dom');
 goog.require('ol.extent');
@@ -12,7 +12,6 @@ goog.require('ol.source.ImageCanvas');
 goog.require('ol.source.Vector');
 goog.require('ol.style.Style');
 goog.require('ol.vec.Mat4');
-
 
 
 /**
@@ -66,7 +65,7 @@ ol.source.ImageVector = function(options) {
 
   goog.base(this, {
     attributions: options.attributions,
-    canvasFunction: goog.bind(this.canvasFunctionInternal_, this),
+    canvasFunction: this.canvasFunctionInternal_.bind(this),
     logo: options.logo,
     projection: options.projection,
     ratio: options.ratio,
@@ -90,8 +89,8 @@ ol.source.ImageVector = function(options) {
 
   this.setStyle(options.style);
 
-  goog.events.listen(this.source_, goog.events.EventType.CHANGE,
-      this.handleSourceChange_, undefined, this);
+  ol.events.listen(this.source_, ol.events.EventType.CHANGE,
+      this.handleSourceChange_, this);
 
 };
 goog.inherits(ol.source.ImageVector, ol.source.ImageCanvas);
@@ -106,8 +105,7 @@ goog.inherits(ol.source.ImageVector, ol.source.ImageCanvas);
  * @return {HTMLCanvasElement} Canvas element.
  * @private
  */
-ol.source.ImageVector.prototype.canvasFunctionInternal_ =
-    function(extent, resolution, pixelRatio, size, projection) {
+ol.source.ImageVector.prototype.canvasFunctionInternal_ = function(extent, resolution, pixelRatio, size, projection) {
 
   var replayGroup = new ol.render.canvas.ReplayGroup(
       ol.renderer.vector.getTolerance(resolution, pixelRatio), extent,
@@ -116,7 +114,7 @@ ol.source.ImageVector.prototype.canvasFunctionInternal_ =
   this.source_.loadFeatures(extent, resolution, projection);
 
   var loading = false;
-  this.source_.forEachFeatureInExtentAtResolution(extent, resolution,
+  this.source_.forEachFeatureInExtent(extent,
       /**
        * @param {ol.Feature} feature Feature.
        */
@@ -162,7 +160,7 @@ ol.source.ImageVector.prototype.forEachFeatureAtCoordinate = function(
     return this.replayGroup_.forEachFeatureAtCoordinate(
         coordinate, resolution, 0, skippedFeatureUids,
         /**
-         * @param {ol.Feature} feature Feature.
+         * @param {ol.Feature|ol.render.Feature} feature Feature.
          * @return {?} Callback result.
          */
         function(feature) {
@@ -217,8 +215,7 @@ ol.source.ImageVector.prototype.getStyleFunction = function() {
  * @return {!goog.vec.Mat4.Number} Transform.
  * @private
  */
-ol.source.ImageVector.prototype.getTransform_ =
-    function(center, resolution, pixelRatio, size) {
+ol.source.ImageVector.prototype.getTransform_ = function(center, resolution, pixelRatio, size) {
   return ol.vec.Mat4.makeTransform2D(this.transform_,
       size[0] / 2, size[1] / 2,
       pixelRatio / resolution, -pixelRatio / resolution,
@@ -229,11 +226,10 @@ ol.source.ImageVector.prototype.getTransform_ =
 
 /**
  * Handle changes in image style state.
- * @param {goog.events.Event} event Image style change event.
+ * @param {ol.events.Event} event Image style change event.
  * @private
  */
-ol.source.ImageVector.prototype.handleImageChange_ =
-    function(event) {
+ol.source.ImageVector.prototype.handleImageChange_ = function(event) {
   this.changed();
 };
 
@@ -256,8 +252,7 @@ ol.source.ImageVector.prototype.handleSourceChange_ = function() {
  * @return {boolean} `true` if an image is loading.
  * @private
  */
-ol.source.ImageVector.prototype.renderFeature_ =
-    function(feature, resolution, pixelRatio, replayGroup) {
+ol.source.ImageVector.prototype.renderFeature_ = function(feature, resolution, pixelRatio, replayGroup) {
   var styles;
   var styleFunction = feature.getStyleFunction();
   if (styleFunction) {
@@ -269,6 +264,9 @@ ol.source.ImageVector.prototype.renderFeature_ =
     return false;
   }
   var i, ii, loading = false;
+  if (!goog.isArray(styles)) {
+    styles = [styles];
+  }
   for (i = 0, ii = styles.length; i < ii; ++i) {
     loading = ol.renderer.vector.renderFeature(
         replayGroup, feature, styles[i],

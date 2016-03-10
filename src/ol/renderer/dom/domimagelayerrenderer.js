@@ -13,14 +13,13 @@ goog.require('ol.renderer.dom.Layer');
 goog.require('ol.vec.Mat4');
 
 
-
 /**
  * @constructor
  * @extends {ol.renderer.dom.Layer}
  * @param {ol.layer.Image} imageLayer Image layer.
  */
 ol.renderer.dom.ImageLayer = function(imageLayer) {
-  var target = goog.dom.createElement('DIV');
+  var target = document.createElement('DIV');
   target.style.position = 'absolute';
 
   goog.base(this, imageLayer, target);
@@ -45,8 +44,7 @@ goog.inherits(ol.renderer.dom.ImageLayer, ol.renderer.dom.Layer);
 /**
  * @inheritDoc
  */
-ol.renderer.dom.ImageLayer.prototype.forEachFeatureAtCoordinate =
-    function(coordinate, frameState, callback, thisArg) {
+ol.renderer.dom.ImageLayer.prototype.forEachFeatureAtCoordinate = function(coordinate, frameState, callback, thisArg) {
   var layer = this.getLayer();
   var source = layer.getSource();
   var resolution = frameState.viewState.resolution;
@@ -55,7 +53,7 @@ ol.renderer.dom.ImageLayer.prototype.forEachFeatureAtCoordinate =
   return source.forEachFeatureAtCoordinate(
       coordinate, resolution, rotation, skippedFeatureUids,
       /**
-       * @param {ol.Feature} feature Feature.
+       * @param {ol.Feature|ol.render.Feature} feature Feature.
        * @return {?} Callback result.
        */
       function(feature) {
@@ -76,8 +74,7 @@ ol.renderer.dom.ImageLayer.prototype.clearFrame = function() {
 /**
  * @inheritDoc
  */
-ol.renderer.dom.ImageLayer.prototype.prepareFrame =
-    function(frameState, layerState) {
+ol.renderer.dom.ImageLayer.prototype.prepareFrame = function(frameState, layerState) {
 
   var viewState = frameState.viewState;
   var viewCenter = viewState.center;
@@ -101,11 +98,13 @@ ol.renderer.dom.ImageLayer.prototype.prepareFrame =
   if (!hints[ol.ViewHint.ANIMATING] && !hints[ol.ViewHint.INTERACTING] &&
       !ol.extent.isEmpty(renderedExtent)) {
     var projection = viewState.projection;
-    var sourceProjection = imageSource.getProjection();
-    if (sourceProjection) {
-      goog.asserts.assert(ol.proj.equivalent(projection, sourceProjection),
-          'projection and sourceProjection are equivalent');
-      projection = sourceProjection;
+    if (!ol.ENABLE_RASTER_REPROJECTION) {
+      var sourceProjection = imageSource.getProjection();
+      if (sourceProjection) {
+        goog.asserts.assert(ol.proj.equivalent(projection, sourceProjection),
+            'projection and sourceProjection are equivalent');
+        projection = sourceProjection;
+      }
     }
     var image_ = imageSource.getImage(renderedExtent, viewResolution,
         frameState.pixelRatio, projection);

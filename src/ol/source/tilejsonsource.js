@@ -8,15 +8,14 @@ goog.provide('ol.source.TileJSON');
 goog.provide('ol.tilejson');
 
 goog.require('goog.asserts');
-goog.require('goog.net.Jsonp');
 goog.require('ol.Attribution');
 goog.require('ol.TileRange');
 goog.require('ol.TileUrlFunction');
 goog.require('ol.extent');
+goog.require('ol.net');
 goog.require('ol.proj');
 goog.require('ol.source.State');
 goog.require('ol.source.TileImage');
-
 
 
 /**
@@ -30,21 +29,75 @@ goog.require('ol.source.TileImage');
  */
 ol.source.TileJSON = function(options) {
 
+  /**
+   * @type {TileJSON}
+   * @private
+   */
+  this.tileJSON_ = null;
+
   goog.base(this, {
     attributions: options.attributions,
+    cacheSize: options.cacheSize,
     crossOrigin: options.crossOrigin,
     projection: ol.proj.get('EPSG:3857'),
+    reprojectionErrorThreshold: options.reprojectionErrorThreshold,
     state: ol.source.State.LOADING,
     tileLoadFunction: options.tileLoadFunction,
     wrapX: options.wrapX !== undefined ? options.wrapX : true
   });
 
-  var request = new goog.net.Jsonp(options.url);
-  request.send(undefined, goog.bind(this.handleTileJSONResponse, this),
-      goog.bind(this.handleTileJSONError, this));
+  if (options.jsonp) {
+    ol.net.jsonp(options.url, this.handleTileJSONResponse.bind(this),
+        this.handleTileJSONError.bind(this));
+  } else {
+    var client = new XMLHttpRequest();
+    client.addEventListener('load', this.onXHRLoad_.bind(this));
+    client.addEventListener('error', this.onXHRError_.bind(this));
+    client.open('GET', options.url);
+    client.send();
+  }
 
 };
 goog.inherits(ol.source.TileJSON, ol.source.TileImage);
+
+
+/**
+ * @private
+ * @param {Event} event The load event.
+ */
+ol.source.TileJSON.prototype.onXHRLoad_ = function(event) {
+  var client = /** @type {XMLHttpRequest} */ (event.target);
+  if (client.status >= 200 && client.status < 300) {
+    var response;
+    try {
+      response = /** @type {TileJSON} */(JSON.parse(client.responseText));
+    } catch (err) {
+      this.handleTileJSONError();
+      return;
+    }
+    this.handleTileJSONResponse(response);
+  } else {
+    this.handleTileJSONError();
+  }
+};
+
+
+/**
+ * @private
+ * @param {Event} event The error event.
+ */
+ol.source.TileJSON.prototype.onXHRError_ = function(event) {
+  this.handleTileJSONError();
+};
+
+
+/**
+ * @return {TileJSON} The tilejson object.
+ * @api
+ */
+ol.source.TileJSON.prototype.getTileJSON = function() {
+  return this.tileJSON_;
+};
 
 
 /**
@@ -96,7 +149,7 @@ ol.source.TileJSON.prototype.handleTileJSONResponse = function(tileJSON) {
       })
     ]);
   }
-
+  this.tileJSON_ = tileJSON;
   this.setState(ol.source.State.READY);
 
 };

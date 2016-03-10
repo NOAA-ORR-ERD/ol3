@@ -301,8 +301,7 @@ ol.extent.createOrUpdateFromCoordinates = function(coordinates, opt_extent) {
  * @param {ol.Extent=} opt_extent Extent.
  * @return {ol.Extent} Extent.
  */
-ol.extent.createOrUpdateFromFlatCoordinates =
-    function(flatCoordinates, offset, end, stride, opt_extent) {
+ol.extent.createOrUpdateFromFlatCoordinates = function(flatCoordinates, offset, end, stride, opt_extent) {
   var extent = ol.extent.createOrUpdateEmpty(opt_extent);
   return ol.extent.extendFlatCoordinates(
       extent, flatCoordinates, offset, end, stride);
@@ -411,8 +410,7 @@ ol.extent.extendCoordinates = function(extent, coordinates) {
  * @param {number} stride Stride.
  * @return {ol.Extent} Extent.
  */
-ol.extent.extendFlatCoordinates =
-    function(extent, flatCoordinates, offset, end, stride) {
+ol.extent.extendFlatCoordinates = function(extent, flatCoordinates, offset, end, stride) {
   for (; offset < end; offset += stride) {
     ol.extent.extendXY(
         extent, flatCoordinates[offset], flatCoordinates[offset + 1]);
@@ -572,24 +570,29 @@ ol.extent.getEnlargedArea = function(extent1, extent2) {
  * @param {ol.Extent=} opt_extent Destination extent.
  * @return {ol.Extent} Extent.
  */
-ol.extent.getForViewAndSize =
-    function(center, resolution, rotation, size, opt_extent) {
+ol.extent.getForViewAndSize = function(center, resolution, rotation, size, opt_extent) {
   var dx = resolution * size[0] / 2;
   var dy = resolution * size[1] / 2;
   var cosRotation = Math.cos(rotation);
   var sinRotation = Math.sin(rotation);
-  /** @type {Array.<number>} */
-  var xs = [-dx, -dx, dx, dx];
-  /** @type {Array.<number>} */
-  var ys = [-dy, dy, -dy, dy];
-  var i, x, y;
-  for (i = 0; i < 4; ++i) {
-    x = xs[i];
-    y = ys[i];
-    xs[i] = center[0] + x * cosRotation - y * sinRotation;
-    ys[i] = center[1] + x * sinRotation + y * cosRotation;
-  }
-  return ol.extent.boundingExtentXYs_(xs, ys, opt_extent);
+  var xCos = dx * cosRotation;
+  var xSin = dx * sinRotation;
+  var yCos = dy * cosRotation;
+  var ySin = dy * sinRotation;
+  var x = center[0];
+  var y = center[1];
+  var x0 = x - xCos + ySin;
+  var x1 = x - xCos - ySin;
+  var x2 = x + xCos - ySin;
+  var x3 = x + xCos + ySin;
+  var y0 = y - xSin - yCos;
+  var y1 = y - xSin + yCos;
+  var y2 = y + xSin + yCos;
+  var y3 = y + xSin - yCos;
+  return ol.extent.createOrUpdate(
+      Math.min(x0, x1, x2, x3), Math.min(y0, y1, y2, y3),
+      Math.max(x0, x1, x2, x3), Math.max(y0, y1, y2, y3),
+      opt_extent);
 };
 
 

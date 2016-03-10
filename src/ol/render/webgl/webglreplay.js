@@ -3,9 +3,9 @@ goog.provide('ol.render.webgl.ReplayGroup');
 
 goog.require('goog.asserts');
 goog.require('goog.functions');
-goog.require('goog.object');
 goog.require('goog.vec.Mat4');
 goog.require('ol.extent');
+goog.require('ol.object');
 goog.require('ol.render.IReplayGroup');
 goog.require('ol.render.VectorContext');
 goog.require('ol.render.webgl.imagereplay.shader.Default');
@@ -15,7 +15,6 @@ goog.require('ol.render.webgl.imagereplay.shader.DefaultVertex');
 goog.require('ol.vec.Mat4');
 goog.require('ol.webgl.Buffer');
 goog.require('ol.webgl.Context');
-
 
 
 /**
@@ -198,7 +197,7 @@ ol.render.webgl.ImageReplay = function(tolerance, maxExtent) {
 
   /**
    * Start index per feature (the feature).
-   * @type {Array.<ol.Feature>}
+   * @type {Array.<ol.Feature|ol.render.Feature>}
    * @private
    */
   this.startIndicesFeature_ = [];
@@ -216,8 +215,7 @@ goog.inherits(ol.render.webgl.ImageReplay, ol.render.VectorContext);
  * @param {ol.webgl.Context} context WebGL context.
  * @return {function()} Delete resources function.
  */
-ol.render.webgl.ImageReplay.prototype.getDeleteResourcesFunction =
-    function(context) {
+ol.render.webgl.ImageReplay.prototype.getDeleteResourcesFunction = function(context) {
   // We only delete our stuff here. The shaders and the program may
   // be used by other ImageReplay instances (for other layers). And
   // they will be deleted when disposing of the ol.webgl.Context
@@ -261,8 +259,7 @@ ol.render.webgl.ImageReplay.prototype.drawAsync = goog.abstractMethod;
  * @return {number} My end.
  * @private
  */
-ol.render.webgl.ImageReplay.prototype.drawCoordinates_ =
-    function(flatCoordinates, offset, end, stride) {
+ol.render.webgl.ImageReplay.prototype.drawCoordinates_ = function(flatCoordinates, offset, end, stride) {
   goog.asserts.assert(this.anchorX_ !== undefined, 'anchorX is defined');
   goog.asserts.assert(this.anchorY_ !== undefined, 'anchorY is defined');
   goog.asserts.assert(this.height_ !== undefined, 'height is defined');
@@ -373,8 +370,7 @@ ol.render.webgl.ImageReplay.prototype.drawCoordinates_ =
 /**
  * @inheritDoc
  */
-ol.render.webgl.ImageReplay.prototype.drawMultiPointGeometry =
-    function(multiPointGeometry, feature) {
+ol.render.webgl.ImageReplay.prototype.drawMultiPointGeometry = function(multiPointGeometry, feature) {
   this.startIndices_.push(this.indices_.length);
   this.startIndicesFeature_.push(feature);
   var flatCoordinates = multiPointGeometry.getFlatCoordinates();
@@ -387,8 +383,7 @@ ol.render.webgl.ImageReplay.prototype.drawMultiPointGeometry =
 /**
  * @inheritDoc
  */
-ol.render.webgl.ImageReplay.prototype.drawPointGeometry =
-    function(pointGeometry, feature) {
+ol.render.webgl.ImageReplay.prototype.drawPointGeometry = function(pointGeometry, feature) {
   this.startIndices_.push(this.indices_.length);
   this.startIndicesFeature_.push(feature);
   var flatCoordinates = pointGeometry.getFlatCoordinates();
@@ -467,8 +462,7 @@ ol.render.webgl.ImageReplay.prototype.finish = function(context) {
  * @param {Object.<string, WebGLTexture>} texturePerImage Texture cache.
  * @param {WebGLRenderingContext} gl Gl.
  */
-ol.render.webgl.ImageReplay.prototype.createTextures_ =
-    function(textures, images, texturePerImage, gl) {
+ol.render.webgl.ImageReplay.prototype.createTextures_ = function(textures, images, texturePerImage, gl) {
   goog.asserts.assert(textures.length === 0,
       'upon creation, textures is empty');
 
@@ -478,7 +472,7 @@ ol.render.webgl.ImageReplay.prototype.createTextures_ =
     image = images[i];
 
     uid = goog.getUid(image).toString();
-    if (goog.object.containsKey(texturePerImage, uid)) {
+    if (uid in texturePerImage) {
       texture = texturePerImage[uid];
     } else {
       texture = ol.webgl.Context.createTexture(
@@ -500,7 +494,7 @@ ol.render.webgl.ImageReplay.prototype.createTextures_ =
  * @param {number} opacity Global opacity.
  * @param {Object.<string, boolean>} skippedFeaturesHash Ids of features
  *  to skip.
- * @param {function(ol.Feature): T|undefined} featureCallback Feature callback.
+ * @param {function((ol.Feature|ol.render.Feature)): T|undefined} featureCallback Feature callback.
  * @param {boolean} oneByOne Draw features one-by-one for the hit-detecion.
  * @param {ol.Extent=} opt_hitExtent Hit extent: Only features intersecting
  *  this extent are checked.
@@ -619,15 +613,14 @@ ol.render.webgl.ImageReplay.prototype.replay = function(context,
  * @param {Array.<WebGLTexture>} textures Textures.
  * @param {Array.<number>} groupIndices Texture group indices.
  */
-ol.render.webgl.ImageReplay.prototype.drawReplay_ =
-    function(gl, context, skippedFeaturesHash, textures, groupIndices) {
+ol.render.webgl.ImageReplay.prototype.drawReplay_ = function(gl, context, skippedFeaturesHash, textures, groupIndices) {
   goog.asserts.assert(textures.length === groupIndices.length,
       'number of textures and groupIndeces match');
   var elementType = context.hasOESElementIndexUint ?
       goog.webgl.UNSIGNED_INT : goog.webgl.UNSIGNED_SHORT;
   var elementSize = context.hasOESElementIndexUint ? 4 : 2;
 
-  if (!goog.object.isEmpty(skippedFeaturesHash)) {
+  if (!ol.object.isEmpty(skippedFeaturesHash)) {
     this.drawReplaySkipping_(
         gl, skippedFeaturesHash, textures, groupIndices,
         elementType, elementSize);
@@ -670,8 +663,7 @@ ol.render.webgl.ImageReplay.prototype.drawReplay_ =
  * @param {number} elementType Element type.
  * @param {number} elementSize Element Size.
  */
-ol.render.webgl.ImageReplay.prototype.drawReplaySkipping_ =
-    function(gl, skippedFeaturesHash, textures, groupIndices,
+ol.render.webgl.ImageReplay.prototype.drawReplaySkipping_ = function(gl, skippedFeaturesHash, textures, groupIndices,
     elementType, elementSize) {
   var featureIndex = 0;
 
@@ -737,15 +729,14 @@ ol.render.webgl.ImageReplay.prototype.drawElements_ = function(
  * @param {ol.webgl.Context} context Context.
  * @param {Object.<string, boolean>} skippedFeaturesHash Ids of features
  *  to skip.
- * @param {function(ol.Feature): T|undefined} featureCallback Feature callback.
+ * @param {function((ol.Feature|ol.render.Feature)): T|undefined} featureCallback Feature callback.
  * @param {boolean} oneByOne Draw features one-by-one for the hit-detecion.
  * @param {ol.Extent=} opt_hitExtent Hit extent: Only features intersecting
  *  this extent are checked.
  * @return {T|undefined} Callback result.
  * @template T
  */
-ol.render.webgl.ImageReplay.prototype.drawHitDetectionReplay_ =
-    function(gl, context, skippedFeaturesHash, featureCallback, oneByOne,
+ol.render.webgl.ImageReplay.prototype.drawHitDetectionReplay_ = function(gl, context, skippedFeaturesHash, featureCallback, oneByOne,
     opt_hitExtent) {
   if (!oneByOne) {
     // draw all hit-detection features in "once" (by texture group)
@@ -765,12 +756,11 @@ ol.render.webgl.ImageReplay.prototype.drawHitDetectionReplay_ =
  * @param {ol.webgl.Context} context Context.
  * @param {Object.<string, boolean>} skippedFeaturesHash Ids of features
  *  to skip.
- * @param {function(ol.Feature): T|undefined} featureCallback Feature callback.
+ * @param {function((ol.Feature|ol.render.Feature)): T|undefined} featureCallback Feature callback.
  * @return {T|undefined} Callback result.
  * @template T
  */
-ol.render.webgl.ImageReplay.prototype.drawHitDetectionReplayAll_ =
-    function(gl, context, skippedFeaturesHash, featureCallback) {
+ol.render.webgl.ImageReplay.prototype.drawHitDetectionReplayAll_ = function(gl, context, skippedFeaturesHash, featureCallback) {
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
   this.drawReplay_(gl, context, skippedFeaturesHash,
       this.hitDetectionTextures_, this.hitDetectionGroupIndices_);
@@ -790,14 +780,13 @@ ol.render.webgl.ImageReplay.prototype.drawHitDetectionReplayAll_ =
  * @param {ol.webgl.Context} context Context.
  * @param {Object.<string, boolean>} skippedFeaturesHash Ids of features
  *  to skip.
- * @param {function(ol.Feature): T|undefined} featureCallback Feature callback.
+ * @param {function((ol.Feature|ol.render.Feature)): T|undefined} featureCallback Feature callback.
  * @param {ol.Extent=} opt_hitExtent Hit extent: Only features intersecting
  *  this extent are checked.
  * @return {T|undefined} Callback result.
  * @template T
  */
-ol.render.webgl.ImageReplay.prototype.drawHitDetectionReplayOneByOne_ =
-    function(gl, context, skippedFeaturesHash, featureCallback,
+ol.render.webgl.ImageReplay.prototype.drawHitDetectionReplayOneByOne_ = function(gl, context, skippedFeaturesHash, featureCallback,
     opt_hitExtent) {
   goog.asserts.assert(this.hitDetectionTextures_.length ===
       this.hitDetectionGroupIndices_.length,
@@ -921,7 +910,6 @@ ol.render.webgl.ImageReplay.prototype.setImageStyle = function(imageStyle) {
 };
 
 
-
 /**
  * @constructor
  * @implements {ol.render.IReplayGroup}
@@ -965,8 +953,7 @@ ol.render.webgl.ReplayGroup = function(
  * @param {ol.webgl.Context} context WebGL context.
  * @return {function()} Delete resources function.
  */
-ol.render.webgl.ReplayGroup.prototype.getDeleteResourcesFunction =
-    function(context) {
+ol.render.webgl.ReplayGroup.prototype.getDeleteResourcesFunction = function(context) {
   var functions = [];
   var replayKey;
   for (replayKey in this.replays_) {
@@ -991,8 +978,7 @@ ol.render.webgl.ReplayGroup.prototype.finish = function(context) {
 /**
  * @inheritDoc
  */
-ol.render.webgl.ReplayGroup.prototype.getReplay =
-    function(zIndex, replayType) {
+ol.render.webgl.ReplayGroup.prototype.getReplay = function(zIndex, replayType) {
   var replay = this.replays_[replayType];
   if (replay === undefined) {
     var constructor = ol.render.webgl.BATCH_CONSTRUCTORS_[replayType];
@@ -1010,7 +996,7 @@ ol.render.webgl.ReplayGroup.prototype.getReplay =
  * @inheritDoc
  */
 ol.render.webgl.ReplayGroup.prototype.isEmpty = function() {
-  return goog.object.isEmpty(this.replays_);
+  return ol.object.isEmpty(this.replays_);
 };
 
 
@@ -1052,7 +1038,7 @@ ol.render.webgl.ReplayGroup.prototype.replay = function(context,
  * @param {number} opacity Global opacity.
  * @param {Object.<string, boolean>} skippedFeaturesHash Ids of features
  *  to skip.
- * @param {function(ol.Feature): T|undefined} featureCallback Feature callback.
+ * @param {function((ol.Feature|ol.render.Feature)): T|undefined} featureCallback Feature callback.
  * @param {boolean} oneByOne Draw features one-by-one for the hit-detecion.
  * @param {ol.Extent=} opt_hitExtent Hit extent: Only features intersecting
  *  this extent are checked.
@@ -1089,7 +1075,7 @@ ol.render.webgl.ReplayGroup.prototype.replayHitDetection_ = function(context,
  * @param {number} opacity Global opacity.
  * @param {Object.<string, boolean>} skippedFeaturesHash Ids of features
  *  to skip.
- * @param {function(ol.Feature): T|undefined} callback Feature callback.
+ * @param {function((ol.Feature|ol.render.Feature)): T|undefined} callback Feature callback.
  * @return {T|undefined} Callback result.
  * @template T
  */
@@ -1118,7 +1104,7 @@ ol.render.webgl.ReplayGroup.prototype.forEachFeatureAtCoordinate = function(
       coordinate, resolution, rotation, ol.render.webgl.HIT_DETECTION_SIZE_,
       pixelRatio, opacity, skippedFeaturesHash,
       /**
-       * @param {ol.Feature} feature Feature.
+       * @param {ol.Feature|ol.render.Feature} feature Feature.
        * @return {?} Callback result.
        */
       function(feature) {
@@ -1159,7 +1145,7 @@ ol.render.webgl.ReplayGroup.prototype.hasFeatureAtCoordinate = function(
       coordinate, resolution, rotation, ol.render.webgl.HIT_DETECTION_SIZE_,
       pixelRatio, opacity, skippedFeaturesHash,
       /**
-       * @param {ol.Feature} feature Feature.
+       * @param {ol.Feature|ol.render.Feature} feature Feature.
        * @return {boolean} Is there a feature?
        */
       function(feature) {

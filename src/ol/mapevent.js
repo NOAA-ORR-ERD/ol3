@@ -1,7 +1,7 @@
 goog.provide('ol.MapEvent');
 goog.provide('ol.MapEventType');
 
-goog.require('goog.events.Event');
+goog.require('ol.events.Event');
 
 
 /**
@@ -26,14 +26,13 @@ ol.MapEventType = {
 };
 
 
-
 /**
  * @classdesc
  * Events emitted as map events are instances of this type.
  * See {@link ol.Map} for which events trigger a map event.
  *
  * @constructor
- * @extends {goog.events.Event}
+ * @extends {ol.events.Event}
  * @implements {oli.MapEvent}
  * @param {string} type Event type.
  * @param {ol.Map} map Map.
@@ -58,4 +57,4 @@ ol.MapEvent = function(type, map, opt_frameState) {
   this.frameState = opt_frameState !== undefined ? opt_frameState : null;
 
 };
-goog.inherits(ol.MapEvent, goog.events.Event);
+goog.inherits(ol.MapEvent, ol.events.Event);

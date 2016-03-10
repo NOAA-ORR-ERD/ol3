@@ -46,13 +46,39 @@ describe('ol.renderer.canvas.Map', function() {
       document.body.removeChild(target);
     });
 
-    it('always includes unmanaged layers', function() {
+    it('calls callback with layer for managed layers', function() {
+      map.addLayer(layer);
+      map.renderSync();
+      var cb = sinon.spy();
+      map.forEachFeatureAtPixel(map.getPixelFromCoordinate([0, 0]), cb);
+      expect(cb).to.be.called();
+      expect(cb.firstCall.args[1]).to.be(layer);
+    });
+
+    it('calls callback with null for unmanaged layers', function() {
       layer.setMap(map);
       map.renderSync();
       var cb = sinon.spy();
-      map.forEachFeatureAtPixel(map.getPixelFromCoordinate([0, 0]), cb, null,
-          function() { return false; });
+      map.forEachFeatureAtPixel(map.getPixelFromCoordinate([0, 0]), cb);
       expect(cb).to.be.called();
+      expect(cb.firstCall.args[1]).to.be(null);
+    });
+
+    it('calls callback with main layer when skipped feature on unmanaged layer', function() {
+      var feature = layer.getSource().getFeatures()[0];
+      var managedLayer = new ol.layer.Vector({
+        source: new ol.source.Vector({
+          features: [feature]
+        })
+      });
+      map.addLayer(managedLayer);
+      map.skipFeature(feature);
+      layer.setMap(map);
+      map.renderSync();
+      var cb = sinon.spy();
+      map.forEachFeatureAtPixel(map.getPixelFromCoordinate([0, 0]), cb);
+      expect(cb.callCount).to.be(1);
+      expect(cb.firstCall.args[1]).to.be(managedLayer);
     });
 
     it('filters managed layers', function() {
@@ -60,7 +86,9 @@ describe('ol.renderer.canvas.Map', function() {
       map.renderSync();
       var cb = sinon.spy();
       map.forEachFeatureAtPixel(map.getPixelFromCoordinate([0, 0]), cb, null,
-          function() { return false; });
+          function() {
+            return false;
+          });
       expect(cb).to.not.be.called();
     });
 
@@ -87,8 +115,12 @@ describe('ol.renderer.canvas.Map', function() {
       renderer = map.getRenderer();
       renderer.layerRenderers_ = {};
       var layerRenderer = new ol.renderer.canvas.Layer(layer);
-      layerRenderer.prepareFrame = function() { return true; };
-      layerRenderer.getImage = function() { return null; };
+      layerRenderer.prepareFrame = function() {
+        return true;
+      };
+      layerRenderer.getImage = function() {
+        return null;
+      };
       renderer.layerRenderers_[goog.getUid(layer)] = layerRenderer;
     });
 

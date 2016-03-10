@@ -9,17 +9,9 @@ var green = 'data:image/gif;base64,R0lGODlhAQABAPAAAAD/AP///yH5BAAAAAAALAAAA' +
 var blue = 'data:image/gif;base64,R0lGODlhAQABAPAAAAAA/////yH5BAAAAAAALAAAAA' +
     'ABAAEAAAICRAEAOw==';
 
-function itNoPhantom() {
-  if (window.mochaPhantomJS) {
-    return xit.apply(this, arguments);
-  } else {
-    return it.apply(this, arguments);
-  }
-}
+where('Uint8ClampedArray').describe('ol.source.Raster', function() {
 
-describe('ol.source.Raster', function() {
-
-  var target, map, redSource, greenSource, blueSource;
+  var target, map, redSource, greenSource, blueSource, raster;
 
   beforeEach(function() {
     target = document.createElement('div');
@@ -76,7 +68,12 @@ describe('ol.source.Raster', function() {
   });
 
   afterEach(function() {
-    goog.dispose(map);
+    map.setTarget(null);
+    map.dispose();
+    raster.dispose();
+    greenSource.dispose();
+    redSource.dispose();
+    blueSource.dispose();
     document.body.removeChild(target);
   });
 
@@ -91,11 +88,11 @@ describe('ol.source.Raster', function() {
       expect(source).to.be.a(ol.source.Raster);
     });
 
-    itNoPhantom('defaults to "pixel" operation', function(done) {
+    it('defaults to "pixel" operation', function(done) {
 
       var log = [];
 
-      raster = new ol.source.Raster({
+      var source = new ol.source.Raster({
         threads: 0,
         sources: [redSource, greenSource, blueSource],
         operation: function(inputs) {
@@ -104,7 +101,7 @@ describe('ol.source.Raster', function() {
         }
       });
 
-      raster.on('afteroperations', function() {
+      source.once('afteroperations', function() {
         expect(log.length).to.equal(4);
         var inputs = log[0];
         var pixel = inputs[0];
@@ -112,18 +109,17 @@ describe('ol.source.Raster', function() {
         done();
       });
 
-      map.getLayers().item(0).setSource(raster);
+      map.getLayers().item(0).setSource(source);
       var view = map.getView();
       view.setCenter([0, 0]);
       view.setZoom(0);
 
     });
 
-    itNoPhantom('allows operation type to be set to "image"', function(done) {
-
+    it('allows operation type to be set to "image"', function(done) {
       var log = [];
 
-      raster = new ol.source.Raster({
+      var source = new ol.source.Raster({
         operationType: ol.raster.OperationType.IMAGE,
         threads: 0,
         sources: [redSource, greenSource, blueSource],
@@ -133,14 +129,17 @@ describe('ol.source.Raster', function() {
         }
       });
 
-      raster.on('afteroperations', function() {
+      source.once('afteroperations', function() {
         expect(log.length).to.equal(1);
         var inputs = log[0];
-        expect(inputs[0]).to.be.an(ImageData);
+        var imageData = inputs[0];
+        expect(imageData.data).to.be.a(Uint8ClampedArray);
+        expect(imageData.width).to.be(2);
+        expect(imageData.height).to.be(2);
         done();
       });
 
-      map.getLayers().item(0).setSource(raster);
+      map.getLayers().item(0).setSource(source);
       var view = map.getView();
       view.setCenter([0, 0]);
       view.setZoom(0);
@@ -151,7 +150,7 @@ describe('ol.source.Raster', function() {
 
   describe('#setOperation()', function() {
 
-    itNoPhantom('allows operation to be set', function(done) {
+    it('allows operation to be set', function(done) {
 
       var count = 0;
       raster.setOperation(function(pixels) {
@@ -169,14 +168,14 @@ describe('ol.source.Raster', function() {
       view.setCenter([0, 0]);
       view.setZoom(0);
 
-      raster.on('afteroperations', function(event) {
+      raster.once('afteroperations', function(event) {
         expect(count).to.equal(4);
         done();
       });
 
     });
 
-    itNoPhantom('updates and re-runs the operation', function(done) {
+    it('updates and re-runs the operation', function(done) {
 
       var view = map.getView();
       view.setCenter([0, 0]);
@@ -200,7 +199,7 @@ describe('ol.source.Raster', function() {
 
   describe('beforeoperations', function() {
 
-    itNoPhantom('gets called before operations are run', function(done) {
+    it('gets called before operations are run', function(done) {
 
       var count = 0;
       raster.setOperation(function(inputs) {
@@ -208,7 +207,7 @@ describe('ol.source.Raster', function() {
         return inputs[0];
       });
 
-      raster.on('beforeoperations', function(event) {
+      raster.once('beforeoperations', function(event) {
         expect(count).to.equal(0);
         expect(!!event).to.be(true);
         expect(event.extent).to.be.an('array');
@@ -224,7 +223,7 @@ describe('ol.source.Raster', function() {
     });
 
 
-    itNoPhantom('allows data to be set for the operation', function(done) {
+    it('allows data to be set for the operation', function(done) {
 
       raster.setOperation(function(inputs, data) {
         ++data.count;
@@ -235,7 +234,7 @@ describe('ol.source.Raster', function() {
         event.data.count = 0;
       });
 
-      raster.on('afteroperations', function(event) {
+      raster.once('afteroperations', function(event) {
         expect(event.data.count).to.equal(4);
         done();
       });
@@ -250,7 +249,7 @@ describe('ol.source.Raster', function() {
 
   describe('afteroperations', function() {
 
-    itNoPhantom('gets called after operations are run', function(done) {
+    it('gets called after operations are run', function(done) {
 
       var count = 0;
       raster.setOperation(function(inputs) {
@@ -258,7 +257,7 @@ describe('ol.source.Raster', function() {
         return inputs[0];
       });
 
-      raster.on('afteroperations', function(event) {
+      raster.once('afteroperations', function(event) {
         expect(count).to.equal(4);
         expect(!!event).to.be(true);
         expect(event.extent).to.be.an('array');
@@ -273,14 +272,14 @@ describe('ol.source.Raster', function() {
 
     });
 
-    itNoPhantom('receives data set by the operation', function(done) {
+    it('receives data set by the operation', function(done) {
 
       raster.setOperation(function(inputs, data) {
         data.message = 'hello world';
         return inputs[0];
       });
 
-      raster.on('afteroperations', function(event) {
+      raster.once('afteroperations', function(event) {
         expect(event.data.message).to.equal('hello world');
         done();
       });

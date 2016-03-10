@@ -1,15 +1,13 @@
 goog.provide('ol.source.ImageMapGuide');
 
-goog.require('goog.events');
-goog.require('goog.events.EventType');
-goog.require('goog.object');
+goog.require('ol.events');
+goog.require('ol.events.EventType');
 goog.require('goog.uri.utils');
 goog.require('ol.Image');
 goog.require('ol.ImageLoadFunctionType');
-goog.require('ol.ImageUrlFunction');
 goog.require('ol.extent');
+goog.require('ol.object');
 goog.require('ol.source.Image');
-
 
 
 /**
@@ -45,23 +43,15 @@ ol.source.ImageMapGuide = function(options) {
 
   /**
    * @private
-   * @type {Object}
+   * @type {!Object}
    */
-  this.params_ = options.params !== undefined ? options.params : {};
-
-  var imageUrlFunction;
-  if (options.url !== undefined) {
-    imageUrlFunction = ol.ImageUrlFunction.createFromParamsFunction(
-        options.url, this.params_, goog.bind(this.getUrl, this));
-  } else {
-    imageUrlFunction = ol.ImageUrlFunction.nullImageUrlFunction;
-  }
+  this.params_ = options.params || {};
 
   /**
    * @private
-   * @type {ol.ImageUrlFunctionType}
+   * @type {string|undefined}
    */
-  this.imageUrlFunction_ = imageUrlFunction;
+  this.url_ = options.url;
 
   /**
    * @private
@@ -126,8 +116,7 @@ ol.source.ImageMapGuide.prototype.getParams = function() {
 /**
  * @inheritDoc
  */
-ol.source.ImageMapGuide.prototype.getImage =
-    function(extent, resolution, pixelRatio, projection) {
+ol.source.ImageMapGuide.prototype.getImageInternal = function(extent, resolution, pixelRatio, projection) {
   resolution = this.findNearestResolution(resolution);
   pixelRatio = this.hidpi_ ? pixelRatio : 1;
 
@@ -148,13 +137,14 @@ ol.source.ImageMapGuide.prototype.getImage =
   var height = ol.extent.getHeight(extent) / resolution;
   var size = [width * pixelRatio, height * pixelRatio];
 
-  var imageUrl = this.imageUrlFunction_(extent, size, projection);
-  if (imageUrl !== undefined) {
+  if (this.url_ !== undefined) {
+    var imageUrl = this.getUrl(this.url_, this.params_, extent, size,
+        projection);
     image = new ol.Image(extent, resolution, pixelRatio,
         this.getAttributions(), imageUrl, this.crossOrigin_,
         this.imageLoadFunction_);
-    goog.events.listen(image, goog.events.EventType.CHANGE,
-        this.handleImageChange, false, this);
+    ol.events.listen(image, ol.events.EventType.CHANGE,
+        this.handleImageChange, this);
   } else {
     image = null;
   }
@@ -202,7 +192,7 @@ ol.source.ImageMapGuide.getScale = function(extent, size, metersPerUnit, dpi) {
  * @api stable
  */
 ol.source.ImageMapGuide.prototype.updateParams = function(params) {
-  goog.object.extend(this.params_, params);
+  ol.object.assign(this.params_, params);
   this.changed();
 };
 
@@ -215,8 +205,7 @@ ol.source.ImageMapGuide.prototype.updateParams = function(params) {
  * @param {ol.proj.Projection} projection Projection.
  * @return {string} The mapagent map image request URL.
  */
-ol.source.ImageMapGuide.prototype.getUrl =
-    function(baseUrl, params, extent, size, projection) {
+ol.source.ImageMapGuide.prototype.getUrl = function(baseUrl, params, extent, size, projection) {
   var scale = ol.source.ImageMapGuide.getScale(extent, size,
       this.metersPerUnit_, this.displayDpi_);
   var center = ol.extent.getCenter(extent);
@@ -233,7 +222,7 @@ ol.source.ImageMapGuide.prototype.getUrl =
     'SETVIEWCENTERX': center[0],
     'SETVIEWCENTERY': center[1]
   };
-  goog.object.extend(baseParams, params);
+  ol.object.assign(baseParams, params);
   return goog.uri.utils.appendParamsFromMap(baseUrl, baseParams);
 };
 

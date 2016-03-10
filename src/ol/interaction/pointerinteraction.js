@@ -1,13 +1,12 @@
 goog.provide('ol.interaction.Pointer');
 
 goog.require('goog.functions');
-goog.require('goog.object');
 goog.require('ol');
 goog.require('ol.MapBrowserEvent.EventType');
 goog.require('ol.MapBrowserPointerEvent');
 goog.require('ol.Pixel');
 goog.require('ol.interaction.Interaction');
-
+goog.require('ol.object');
 
 
 /**
@@ -87,7 +86,7 @@ goog.inherits(ol.interaction.Pointer, ol.interaction.Interaction);
 
 
 /**
- * @param {Array.<ol.pointer.PointerEvent>} pointerEvents
+ * @param {Array.<ol.pointer.PointerEvent>} pointerEvents List of events.
  * @return {ol.Pixel} Centroid pixel.
  */
 ol.interaction.Pointer.centroid = function(pointerEvents) {
@@ -108,8 +107,7 @@ ol.interaction.Pointer.centroid = function(pointerEvents) {
  *     or pointerup event.
  * @private
  */
-ol.interaction.Pointer.prototype.isPointerDraggingEvent_ =
-    function(mapBrowserEvent) {
+ol.interaction.Pointer.prototype.isPointerDraggingEvent_ = function(mapBrowserEvent) {
   var type = mapBrowserEvent.type;
   return (
       type === ol.MapBrowserEvent.EventType.POINTERDOWN ||
@@ -122,8 +120,7 @@ ol.interaction.Pointer.prototype.isPointerDraggingEvent_ =
  * @param {ol.MapBrowserPointerEvent} mapBrowserEvent Event.
  * @private
  */
-ol.interaction.Pointer.prototype.updateTrackedPointers_ =
-    function(mapBrowserEvent) {
+ol.interaction.Pointer.prototype.updateTrackedPointers_ = function(mapBrowserEvent) {
   if (this.isPointerDraggingEvent_(mapBrowserEvent)) {
     var event = mapBrowserEvent.pointerEvent;
 
@@ -136,7 +133,7 @@ ol.interaction.Pointer.prototype.updateTrackedPointers_ =
       // update only when there was a pointerdown event for this pointer
       this.trackedPointers_[event.pointerId] = event;
     }
-    this.targetPointers = goog.object.getValues(this.trackedPointers_);
+    this.targetPointers = ol.object.getValues(this.trackedPointers_);
   }
 };
 

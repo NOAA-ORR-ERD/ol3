@@ -5,8 +5,8 @@ goog.provide('ol.interaction.DrawGeometryFunctionType');
 goog.provide('ol.interaction.DrawMode');
 
 goog.require('goog.asserts');
-goog.require('goog.events');
-goog.require('goog.events.Event');
+goog.require('ol.events');
+goog.require('ol.events.Event');
 goog.require('ol.Collection');
 goog.require('ol.Coordinate');
 goog.require('ol.Feature');
@@ -49,14 +49,13 @@ ol.interaction.DrawEventType = {
 };
 
 
-
 /**
  * @classdesc
  * Events emitted by {@link ol.interaction.Draw} instances are instances of
  * this type.
  *
  * @constructor
- * @extends {goog.events.Event}
+ * @extends {ol.events.Event}
  * @implements {oli.DrawEvent}
  * @param {ol.interaction.DrawEventType} type Type.
  * @param {ol.Feature} feature The feature drawn.
@@ -73,8 +72,7 @@ ol.interaction.DrawEvent = function(type, feature) {
   this.feature = feature;
 
 };
-goog.inherits(ol.interaction.DrawEvent, goog.events.Event);
-
+goog.inherits(ol.interaction.DrawEvent, ol.events.Event);
 
 
 /**
@@ -166,8 +164,9 @@ ol.interaction.Draw = function(options) {
     if (this.type_ === ol.geom.GeometryType.CIRCLE) {
       /**
        * @param {ol.Coordinate|Array.<ol.Coordinate>|Array.<Array.<ol.Coordinate>>} coordinates
-       * @param {ol.geom.SimpleGeometry=} opt_geometry
-       * @return {ol.geom.SimpleGeometry}
+       *     The coordinates.
+       * @param {ol.geom.SimpleGeometry=} opt_geometry Optional geometry.
+       * @return {ol.geom.SimpleGeometry} A geometry.
        */
       geometryFunction = function(coordinates, opt_geometry) {
         var circle = opt_geometry ? opt_geometry :
@@ -191,8 +190,9 @@ ol.interaction.Draw = function(options) {
       }
       /**
        * @param {ol.Coordinate|Array.<ol.Coordinate>|Array.<Array.<ol.Coordinate>>} coordinates
-       * @param {ol.geom.SimpleGeometry=} opt_geometry
-       * @return {ol.geom.SimpleGeometry}
+       *     The coordinates.
+       * @param {ol.geom.SimpleGeometry=} opt_geometry Optional geometry.
+       * @return {ol.geom.SimpleGeometry} A geometry.
        */
       geometryFunction = function(coordinates, opt_geometry) {
         var geometry = opt_geometry;
@@ -300,9 +300,9 @@ ol.interaction.Draw = function(options) {
   this.freehandCondition_ = options.freehandCondition ?
       options.freehandCondition : ol.events.condition.shiftKeyOnly;
 
-  goog.events.listen(this,
+  ol.events.listen(this,
       ol.Object.getChangeEventType(ol.interaction.InteractionProperty.ACTIVE),
-      this.updateState_, false, this);
+      this.updateState_, this);
 
 };
 goog.inherits(ol.interaction.Draw, ol.interaction.Pointer);

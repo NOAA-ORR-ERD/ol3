@@ -5,17 +5,20 @@ goog.require('goog.dom');
 goog.require('goog.dom.classlist');
 goog.require('goog.dom.fullscreen');
 goog.require('goog.dom.fullscreen.EventType');
-goog.require('goog.events');
-goog.require('goog.events.EventType');
+goog.require('ol.events');
+goog.require('ol.events.EventType');
 goog.require('ol');
 goog.require('ol.control.Control');
 goog.require('ol.css');
 
 
-
 /**
  * @classdesc
  * Provides a button that when clicked fills up the full screen with the map.
+ * The full screen source element is by default the element containing the map viewport unless
+ * overriden by providing the `source` option. In which case, the dom
+ * element introduced using this parameter will be displayed in full screen.
+ *
  * When in full screen mode, a close button is shown to exit full screen mode.
  * The [Fullscreen API](http://www.w3.org/TR/fullscreen/) is used to
  * toggle the map in full screen mode.
@@ -34,25 +37,26 @@ ol.control.FullScreen = function(opt_options) {
    * @private
    * @type {string}
    */
-  this.cssClassName_ = options.className ? options.className : 'ol-full-screen';
+  this.cssClassName_ = options.className !== undefined ? options.className :
+      'ol-full-screen';
 
-  var label = options.label ? options.label : '\u2194';
-
-  /**
-   * @private
-   * @type {Node}
-   */
-  this.labelNode_ = goog.isString(label) ?
-      goog.dom.createTextNode(label) : label;
-
-  var labelActive = options.labelActive ? options.labelActive : '\u00d7';
+  var label = options.label !== undefined ? options.label : '\u2922';
 
   /**
    * @private
    * @type {Node}
    */
-  this.labelActiveNode_ = goog.isString(labelActive) ?
-      goog.dom.createTextNode(labelActive) : labelActive;
+  this.labelNode_ = typeof label === 'string' ?
+      document.createTextNode(label) : label;
+
+  var labelActive = options.labelActive !== undefined ? options.labelActive : '\u00d7';
+
+  /**
+   * @private
+   * @type {Node}
+   */
+  this.labelActiveNode_ = typeof labelActive === 'string' ?
+      document.createTextNode(labelActive) : labelActive;
 
   var tipLabel = options.tipLabel ? options.tipLabel : 'Toggle full-screen';
   var button = goog.dom.createDom('BUTTON', {
@@ -61,12 +65,12 @@ ol.control.FullScreen = function(opt_options) {
     'title': tipLabel
   }, this.labelNode_);
 
-  goog.events.listen(button, goog.events.EventType.CLICK,
-      this.handleClick_, false, this);
+  ol.events.listen(button, ol.events.EventType.CLICK,
+      this.handleClick_, this);
 
-  goog.events.listen(goog.global.document,
+  ol.events.listen(goog.global.document,
       goog.dom.fullscreen.EventType.CHANGE,
-      this.handleFullScreenChange_, false, this);
+      this.handleFullScreenChange_, this);
 
   var cssClasses = this.cssClassName_ + ' ' + ol.css.CLASS_UNSELECTABLE +
       ' ' + ol.css.CLASS_CONTROL + ' ' +
@@ -84,12 +88,18 @@ ol.control.FullScreen = function(opt_options) {
    */
   this.keys_ = options.keys !== undefined ? options.keys : false;
 
+  /**
+   * @private
+   * @type {Element|string|undefined}
+   */
+  this.source_ = options.source;
+
 };
 goog.inherits(ol.control.FullScreen, ol.control.Control);
 
 
 /**
- * @param {goog.events.BrowserEvent} event The event to handle
+ * @param {Event} event The event to handle
  * @private
  */
 ol.control.FullScreen.prototype.handleClick_ = function(event) {
@@ -112,9 +122,8 @@ ol.control.FullScreen.prototype.handleFullScreen_ = function() {
   if (goog.dom.fullscreen.isFullScreen()) {
     goog.dom.fullscreen.exitFullScreen();
   } else {
-    var target = map.getTarget();
-    goog.asserts.assert(target, 'target should be defined');
-    var element = goog.dom.getElement(target);
+    var element = this.source_ ?
+        goog.dom.getElement(this.source_) : map.getTargetElement();
     goog.asserts.assert(element, 'element should be defined');
     if (this.keys_) {
       goog.dom.fullscreen.requestFullScreenWithKeys(element);
@@ -131,7 +140,7 @@ ol.control.FullScreen.prototype.handleFullScreen_ = function() {
 ol.control.FullScreen.prototype.handleFullScreenChange_ = function() {
   var opened = this.cssClassName_ + '-true';
   var closed = this.cssClassName_ + '-false';
-  var button = goog.dom.getFirstElementChild(this.element);
+  var button = this.element.firstElementChild;
   var map = this.getMap();
   if (goog.dom.fullscreen.isFullScreen()) {
     goog.dom.classlist.swap(button, closed, opened);

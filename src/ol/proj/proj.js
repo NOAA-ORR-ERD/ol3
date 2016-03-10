@@ -5,11 +5,11 @@ goog.provide('ol.proj.ProjectionLike');
 goog.provide('ol.proj.Units');
 
 goog.require('goog.asserts');
-goog.require('goog.object');
 goog.require('ol');
 goog.require('ol.Extent');
 goog.require('ol.TransformFunction');
 goog.require('ol.extent');
+goog.require('ol.object');
 goog.require('ol.sphere.NORMAL');
 
 
@@ -23,7 +23,8 @@ ol.proj.ProjectionLike;
 
 
 /**
- * Projection units: `'degrees'`, `'ft'`, `'m'`, `'pixels'`, or `'us-ft'`.
+ * Projection units: `'degrees'`, `'ft'`, `'m'`, `'pixels'`, `'tile-pixels'` or
+ * `'us-ft'`.
  * @enum {string}
  * @api stable
  */
@@ -32,6 +33,7 @@ ol.proj.Units = {
   FEET: 'ft',
   METERS: 'm',
   PIXELS: 'pixels',
+  TILE_PIXELS: 'tile-pixels',
   USFEET: 'us-ft'
 };
 
@@ -48,7 +50,6 @@ ol.proj.METERS_PER_UNIT[ol.proj.Units.DEGREES] =
 ol.proj.METERS_PER_UNIT[ol.proj.Units.FEET] = 0.3048;
 ol.proj.METERS_PER_UNIT[ol.proj.Units.METERS] = 1;
 ol.proj.METERS_PER_UNIT[ol.proj.Units.USFEET] = 1200 / 3937;
-
 
 
 /**
@@ -73,7 +74,8 @@ ol.proj.METERS_PER_UNIT[ol.proj.Units.USFEET] = 1200 / 3937;
  *     http://www.opengis.net/gml/srs/epsg.xml#3857
  *
  * If you use proj4js, aliases can be added using `proj4.defs()`; see
- * [documentation](https://github.com/proj4js/proj4js).
+ * [documentation](https://github.com/proj4js/proj4js). To set an alternative
+ * namespace for proj4, use {@link ol.proj.setProj4}.
  *
  * @constructor
  * @param {olx.ProjectionOptions} options Projection options.
@@ -140,39 +142,42 @@ ol.proj.Projection = function(options) {
    */
   this.defaultTileGrid_ = null;
 
+  /**
+   * @private
+   * @type {number|undefined}
+   */
+  this.metersPerUnit_ = options.metersPerUnit;
+
   var projections = ol.proj.projections_;
   var code = options.code;
   goog.asserts.assert(code !== undefined,
       'Option "code" is required for constructing instance');
-  if (ol.ENABLE_PROJ4JS && typeof proj4 == 'function' &&
-      projections[code] === undefined) {
-    var def = proj4.defs(code);
-    if (def !== undefined) {
-      if (def.axis !== undefined && options.axisOrientation === undefined) {
-        this.axisOrientation_ = def.axis;
-      }
-      if (options.units === undefined) {
-        var units = def.units;
-        if (def.to_meter !== undefined) {
-          if (units === undefined ||
-              ol.proj.METERS_PER_UNIT[units] === undefined) {
-            units = def.to_meter.toString();
-            ol.proj.METERS_PER_UNIT[units] = def.to_meter;
-          }
+  if (ol.ENABLE_PROJ4JS) {
+    var proj4js = ol.proj.proj4_ || goog.global['proj4'];
+    if (typeof proj4js == 'function' && projections[code] === undefined) {
+      var def = proj4js.defs(code);
+      if (def !== undefined) {
+        if (def.axis !== undefined && options.axisOrientation === undefined) {
+          this.axisOrientation_ = def.axis;
         }
-        this.units_ = units;
-      }
-      var currentCode, currentDef, currentProj, proj4Transform;
-      for (currentCode in projections) {
-        currentDef = proj4.defs(currentCode);
-        if (currentDef !== undefined) {
-          currentProj = ol.proj.get(currentCode);
-          if (currentDef === def) {
-            ol.proj.addEquivalentProjections([currentProj, this]);
-          } else {
-            proj4Transform = proj4(currentCode, code);
-            ol.proj.addCoordinateTransforms(currentProj, this,
-                proj4Transform.forward, proj4Transform.inverse);
+        if (options.metersPerUnit === undefined) {
+          this.metersPerUnit_ = def.to_meter;
+        }
+        if (options.units === undefined) {
+          this.units_ = def.units;
+        }
+        var currentCode, currentDef, currentProj, proj4Transform;
+        for (currentCode in projections) {
+          currentDef = proj4js.defs(currentCode);
+          if (currentDef !== undefined) {
+            currentProj = ol.proj.get(currentCode);
+            if (currentDef === def) {
+              ol.proj.addEquivalentProjections([currentProj, this]);
+            } else {
+              proj4Transform = proj4js(currentCode, code);
+              ol.proj.addCoordinateTransforms(currentProj, this,
+                  proj4Transform.forward, proj4Transform.inverse);
+            }
           }
         }
       }
@@ -222,12 +227,13 @@ ol.proj.Projection.prototype.getUnits = function() {
 
 /**
  * Get the amount of meters per unit of this projection.  If the projection is
- * not configured with a units identifier, the return is `undefined`.
+ * not configured with `metersPerUnit` or a units identifier, the return is
+ * `undefined`.
  * @return {number|undefined} Meters.
  * @api stable
  */
 ol.proj.Projection.prototype.getMetersPerUnit = function() {
-  return ol.proj.METERS_PER_UNIT[this.units_];
+  return this.metersPerUnit_ || ol.proj.METERS_PER_UNIT[this.units_];
 };
 
 
@@ -404,6 +410,34 @@ ol.proj.transforms_ = {};
 
 
 /**
+ * @private
+ * @type {proj4}
+ */
+ol.proj.proj4_ = null;
+
+
+if (ol.ENABLE_PROJ4JS) {
+  /**
+   * Register proj4. If not explicitly registered, it will be assumed that
+   * proj4js will be loaded in the global namespace. For example in a
+   * browserify ES6 environment you could use:
+   *
+   *     import ol from 'openlayers';
+   *     import proj4 from 'proj4';
+   *     ol.proj.setProj4(proj4);
+   *
+   * @param {proj4} proj4 Proj4.
+   * @api
+   */
+  ol.proj.setProj4 = function(proj4) {
+    goog.asserts.assert(typeof proj4 == 'function',
+        'proj4 argument should be a function');
+    ol.proj.proj4_ = proj4;
+  };
+}
+
+
+/**
  * Registers transformation functions that don't alter coordinates. Those allow
  * to transform between projections with equal meaning.
  *
@@ -435,8 +469,7 @@ ol.proj.addEquivalentProjections = function(projections) {
  * @param {ol.TransformFunction} inverseTransform Transform from any projection
  *   in projection2 to any projection in projection1..
  */
-ol.proj.addEquivalentTransforms =
-    function(projections1, projections2, forwardTransform, inverseTransform) {
+ol.proj.addEquivalentTransforms = function(projections1, projections2, forwardTransform, inverseTransform) {
   projections1.forEach(function(projection1) {
     projections2.forEach(function(projection2) {
       ol.proj.addTransform(projection1, projection2, forwardTransform);
@@ -487,7 +520,7 @@ ol.proj.clearAllProjections = function() {
 ol.proj.createProjection = function(projection, defaultCode) {
   if (!projection) {
     return ol.proj.get(defaultCode);
-  } else if (goog.isString(projection)) {
+  } else if (typeof projection === 'string') {
     return ol.proj.get(projection);
   } else {
     goog.asserts.assertInstanceof(projection, ol.proj.Projection,
@@ -509,7 +542,7 @@ ol.proj.addTransform = function(source, destination, transformFn) {
   var sourceCode = source.getCode();
   var destinationCode = destination.getCode();
   var transforms = ol.proj.transforms_;
-  if (!goog.object.containsKey(transforms, sourceCode)) {
+  if (!(sourceCode in transforms)) {
     transforms[sourceCode] = {};
   }
   transforms[sourceCode][destinationCode] = transformFn;
@@ -535,8 +568,7 @@ ol.proj.addTransform = function(source, destination, transformFn) {
  *     the transformed {@link ol.Coordinate}.
  * @api stable
  */
-ol.proj.addCoordinateTransforms =
-    function(source, destination, forward, inverse) {
+ol.proj.addCoordinateTransforms = function(source, destination, forward, inverse) {
   var sourceProj = ol.proj.get(source);
   var destProj = ol.proj.get(destination);
   ol.proj.addTransform(sourceProj, destProj,
@@ -598,7 +630,7 @@ ol.proj.removeTransform = function(source, destination) {
       'destinationCode should be in transforms of sourceCode');
   var transform = transforms[sourceCode][destinationCode];
   delete transforms[sourceCode][destinationCode];
-  if (goog.object.isEmpty(transforms[sourceCode])) {
+  if (ol.object.isEmpty(transforms[sourceCode])) {
     delete transforms[sourceCode];
   }
   return transform;
@@ -648,13 +680,16 @@ ol.proj.get = function(projectionLike) {
   var projection;
   if (projectionLike instanceof ol.proj.Projection) {
     projection = projectionLike;
-  } else if (goog.isString(projectionLike)) {
+  } else if (typeof projectionLike === 'string') {
     var code = projectionLike;
     projection = ol.proj.projections_[code];
-    if (ol.ENABLE_PROJ4JS && projection === undefined &&
-        typeof proj4 == 'function' && proj4.defs(code) !== undefined) {
-      projection = new ol.proj.Projection({code: code});
-      ol.proj.addProjection(projection);
+    if (ol.ENABLE_PROJ4JS) {
+      var proj4js = ol.proj.proj4_ || goog.global['proj4'];
+      if (projection === undefined && typeof proj4js == 'function' &&
+          proj4js.defs(code) !== undefined) {
+        projection = new ol.proj.Projection({code: code});
+        ol.proj.addProjection(projection);
+      }
     }
   } else {
     projection = null;
@@ -671,18 +706,19 @@ ol.proj.get = function(projectionLike) {
  * @param {ol.proj.Projection} projection1 Projection 1.
  * @param {ol.proj.Projection} projection2 Projection 2.
  * @return {boolean} Equivalent.
+ * @api
  */
 ol.proj.equivalent = function(projection1, projection2) {
   if (projection1 === projection2) {
     return true;
-  } else if (projection1.getCode() === projection2.getCode()) {
-    return true;
-  } else if (projection1.getUnits() != projection2.getUnits()) {
-    return false;
+  }
+  var equalUnits = projection1.getUnits() === projection2.getUnits();
+  if (projection1.getCode() === projection2.getCode()) {
+    return equalUnits;
   } else {
     var transformFn = ol.proj.getTransformFromProjections(
         projection1, projection2);
-    return transformFn === ol.proj.cloneTransform;
+    return transformFn === ol.proj.cloneTransform && equalUnits;
   }
 };
 
@@ -714,14 +750,12 @@ ol.proj.getTransform = function(source, destination) {
  *     object.
  * @return {ol.TransformFunction} Transform function.
  */
-ol.proj.getTransformFromProjections =
-    function(sourceProjection, destinationProjection) {
+ol.proj.getTransformFromProjections = function(sourceProjection, destinationProjection) {
   var transforms = ol.proj.transforms_;
   var sourceCode = sourceProjection.getCode();
   var destinationCode = destinationProjection.getCode();
   var transform;
-  if (goog.object.containsKey(transforms, sourceCode) &&
-      goog.object.containsKey(transforms[sourceCode], destinationCode)) {
+  if (sourceCode in transforms && destinationCode in transforms[sourceCode]) {
     transform = transforms[sourceCode][destinationCode];
   }
   if (transform === undefined) {
@@ -816,8 +850,7 @@ ol.proj.transformExtent = function(extent, source, destination) {
  * @param {ol.proj.Projection} destinationProjection Destination projection.
  * @return {ol.Coordinate} Point.
  */
-ol.proj.transformWithProjections =
-    function(point, sourceProjection, destinationProjection) {
+ol.proj.transformWithProjections = function(point, sourceProjection, destinationProjection) {
   var transformFn = ol.proj.getTransformFromProjections(
       sourceProjection, destinationProjection);
   return transformFn(point);

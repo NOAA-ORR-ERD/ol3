@@ -6,8 +6,6 @@ goog.require('ol.TileState');
 goog.require('ol.dom');
 goog.require('ol.size');
 goog.require('ol.source.Tile');
-goog.require('ol.tilecoord');
-
 
 
 /**
@@ -45,7 +43,10 @@ goog.inherits(ol.DebugTile_, ol.Tile);
 
 
 /**
- * @inheritDoc
+ * Get the image element for this tile.
+ * @param {Object=} opt_context Optional context. Only used by the DOM
+ *     renderer.
+ * @return {HTMLCanvasElement} Image.
  */
 ol.DebugTile_.prototype.getImage = function(opt_context) {
   var key = opt_context !== undefined ? goog.getUid(opt_context) : -1;
@@ -70,7 +71,6 @@ ol.DebugTile_.prototype.getImage = function(opt_context) {
 
   }
 };
-
 
 
 /**
@@ -110,8 +110,8 @@ ol.source.TileDebug.prototype.getTile = function(z, x, y) {
     var tileSize = ol.size.toSize(this.tileGrid.getTileSize(z));
     var tileCoord = [z, x, y];
     var textTileCoord = this.getTileCoordForTileUrlFunction(tileCoord);
-    var text = !textTileCoord ? '' : ol.tilecoord.toString(
-        this.getTileCoordForTileUrlFunction(textTileCoord));
+    var text = !textTileCoord ? '' :
+        this.getTileCoordForTileUrlFunction(textTileCoord).toString();
     var tile = new ol.DebugTile_(tileCoord, tileSize, text);
     this.tileCache.set(tileCoordKey, tile);
     return tile;

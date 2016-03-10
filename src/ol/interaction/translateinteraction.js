@@ -1,8 +1,8 @@
 goog.provide('ol.interaction.Translate');
 goog.provide('ol.interaction.TranslateEvent');
 
-goog.require('goog.events');
-goog.require('goog.events.Event');
+goog.require('ol.events');
+goog.require('ol.events.Event');
 goog.require('ol.array');
 goog.require('ol.interaction.Pointer');
 
@@ -32,14 +32,13 @@ ol.interaction.TranslateEventType = {
 };
 
 
-
 /**
  * @classdesc
  * Events emitted by {@link ol.interaction.Translate} instances are instances of
  * this type.
  *
  * @constructor
- * @extends {goog.events.Event}
+ * @extends {ol.events.Event}
  * @implements {oli.interaction.TranslateEvent}
  * @param {ol.interaction.TranslateEventType} type Type.
  * @param {ol.Collection.<ol.Feature>} features The features translated.
@@ -64,8 +63,7 @@ ol.interaction.TranslateEvent = function(type, features, coordinate) {
    */
   this.coordinate = coordinate;
 };
-goog.inherits(ol.interaction.TranslateEvent, goog.events.Event);
-
+goog.inherits(ol.interaction.TranslateEvent, ol.events.Event);
 
 
 /**
@@ -195,8 +193,7 @@ ol.interaction.Translate.handleDragEvent_ = function(event) {
  * @this {ol.interaction.Translate}
  * @private
  */
-ol.interaction.Translate.handleMoveEvent_ = function(event)
-    {
+ol.interaction.Translate.handleMoveEvent_ = function(event) {
   var elem = event.map.getTargetElement();
   var intersectingFeature = event.map.forEachFeatureAtPixel(event.pixel,
       function(feature) {

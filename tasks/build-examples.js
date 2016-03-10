@@ -2,12 +2,12 @@ var path = require('path');
 
 var Metalsmith = require('metalsmith');
 var handlebars = require('handlebars');
-var templates = require('metalsmith-templates');
+var templates = require('metalsmith-layouts');
 var marked = require('marked');
 var pkg = require('../package.json');
 
 var markupRegEx = /([^\/^\.]*)\.html$/;
-var cleanupJSRegEx = /.*(goog\.require(.*);|.*renderer: common\..*,?)[\n]*/g;
+var cleanupJSRegEx = /.*(\/\/ NOCOMPILE|goog\.require\(.*\);|.*renderer: common\..*,?)[\n]*/g;
 var requiresRegEx = /.*goog\.require\('(ol\.\S*)'\);/g;
 var isCssRegEx = /\.css$/;
 var isJsRegEx = /\.js$/;
@@ -46,7 +46,7 @@ function getLinkToApiHtml(requires) {
   var lis = requires.map(function(symb) {
     var href = '../apidoc/' + symb + '.html';
     return '<li><a href="' + href + '" title="API documentation for ' +
-        symb +'">' + symb + '</a></li>';
+        symb + '">' + symb + '</a></li>';
   });
   return '<ul class="inline">' + lis.join() + '</ul>';
 }
@@ -72,8 +72,8 @@ function augmentExamples(files, metalsmith, done) {
     var file = files[filename];
     var match = filename.match(markupRegEx);
     if (match && filename !== 'index.html') {
-      if (!file.template) {
-        throw new Error(filename + ': Missing template in YAML front-matter');
+      if (!file.layout) {
+        throw new Error(filename + ': Missing "layout" in YAML front-matter');
       }
       var id = match[1];
 
@@ -121,7 +121,9 @@ function augmentExamples(files, metalsmith, done) {
             remoteResources[i] = '<script src="' + remoteResource +
                 '"></script>';
           } else if (isCssRegEx.test(resource)) {
-            resources[i] = '<link rel="stylesheet" href="' + resource + '">';
+            if (resource.indexOf('bootstrap.min.css') === -1) {
+              resources[i] = '<link rel="stylesheet" href="' + resource + '">';
+            }
             remoteResources[i] = '<link rel="stylesheet" href="' +
                 remoteResource + '">';
           } else {
@@ -131,7 +133,7 @@ function augmentExamples(files, metalsmith, done) {
         }
         file.extraHead = {
           local: resources.join('\n'),
-          remote: remoteResources.join('\n'),
+          remote: remoteResources.join('\n')
         };
         file.extraResources = file.resources.length ?
             ',' + fiddleResources.join(',') : '';
@@ -196,7 +198,7 @@ function createIndex(files, metalsmith, done) {
   var exampleInfos = [];
   for (var filename in files) {
     var example = files[filename];
-    if (markupRegEx.test(filename)) {
+    if (markupRegEx.test(filename) && filename !== 'index.html') {
       exampleInfos.push({
         link: filename,
         example: filename,
@@ -233,6 +235,16 @@ function main(callback) {
         helpers: {
           md: function(str) {
             return new handlebars.SafeString(marked(str));
+          },
+          indent: function(text, options) {
+            if (!text) {
+              return text;
+            }
+            var count = options.hash.spaces || 2;
+            var spaces = new Array(count + 1).join(' ');
+            return text.split('\n').map(function(line) {
+              return line ? spaces + line : '';
+            }).join('\n');
           }
         }
       }))

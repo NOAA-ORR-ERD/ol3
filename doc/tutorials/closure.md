@@ -167,9 +167,7 @@ The minimum config file looks like this:
       "node_modules/openlayers/externs/topojson.js"
     ],
     "define": [
-      "goog.array.ASSUME_NATIVE_FUNCTIONS=true",
       "goog.dom.ASSUME_STANDARDS_MODE=true",
-      "goog.json.USE_NATIVE_JSON=true",
       "goog.DEBUG=false",
       "ol.ENABLE_DOM=false",
       "ol.ENABLE_WEBGL=false"
@@ -223,9 +221,7 @@ Here is a version of `config.json` with more compilation checks enabled:
       "node_modules/openlayers/externs/topojson.js"
     ],
     "define": [
-      "goog.array.ASSUME_NATIVE_FUNCTIONS=true",
       "goog.dom.ASSUME_STANDARDS_MODE=true",
-      "goog.json.USE_NATIVE_JSON=true",
       "goog.DEBUG=false",
       "ol.ENABLE_DOM=false",
       "ol.ENABLE_WEBGL=false"
@@ -312,7 +308,7 @@ directory:
 ```
 
 Note that the page includes a `script` tag referencing the `app.js` file,
-which is the file resuted from the compilation.
+which is the file resulting from the compilation.
 
 You are done!
 

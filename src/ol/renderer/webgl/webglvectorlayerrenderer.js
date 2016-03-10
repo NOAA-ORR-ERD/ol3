@@ -1,8 +1,7 @@
 goog.provide('ol.renderer.webgl.VectorLayer');
 
-goog.require('goog.array');
 goog.require('goog.asserts');
-goog.require('goog.events');
+goog.require('ol.events');
 goog.require('ol.ViewHint');
 goog.require('ol.extent');
 goog.require('ol.layer.Vector');
@@ -10,7 +9,6 @@ goog.require('ol.render.webgl.ReplayGroup');
 goog.require('ol.renderer.vector');
 goog.require('ol.renderer.webgl.Layer');
 goog.require('ol.vec.Mat4');
-
 
 
 /**
@@ -73,8 +71,7 @@ goog.inherits(ol.renderer.webgl.VectorLayer, ol.renderer.webgl.Layer);
 /**
  * @inheritDoc
  */
-ol.renderer.webgl.VectorLayer.prototype.composeFrame =
-    function(frameState, layerState, context) {
+ol.renderer.webgl.VectorLayer.prototype.composeFrame = function(frameState, layerState, context) {
   this.layerState_ = layerState;
   var viewState = frameState.viewState;
   var replayGroup = this.replayGroup_;
@@ -105,8 +102,7 @@ ol.renderer.webgl.VectorLayer.prototype.disposeInternal = function() {
 /**
  * @inheritDoc
  */
-ol.renderer.webgl.VectorLayer.prototype.forEachFeatureAtCoordinate =
-    function(coordinate, frameState, callback, thisArg) {
+ol.renderer.webgl.VectorLayer.prototype.forEachFeatureAtCoordinate = function(coordinate, frameState, callback, thisArg) {
   if (!this.replayGroup_ || !this.layerState_) {
     return undefined;
   } else {
@@ -119,9 +115,9 @@ ol.renderer.webgl.VectorLayer.prototype.forEachFeatureAtCoordinate =
     return this.replayGroup_.forEachFeatureAtCoordinate(coordinate,
         context, viewState.center, viewState.resolution, viewState.rotation,
         frameState.size, frameState.pixelRatio, layerState.opacity,
-        layerState.managed ? frameState.skippedFeatureUids : {},
+        {},
         /**
-         * @param {ol.Feature} feature Feature.
+         * @param {ol.Feature|ol.render.Feature} feature Feature.
          * @return {?} Callback result.
          */
         function(feature) {
@@ -139,8 +135,7 @@ ol.renderer.webgl.VectorLayer.prototype.forEachFeatureAtCoordinate =
 /**
  * @inheritDoc
  */
-ol.renderer.webgl.VectorLayer.prototype.hasFeatureAtCoordinate =
-    function(coordinate, frameState) {
+ol.renderer.webgl.VectorLayer.prototype.hasFeatureAtCoordinate = function(coordinate, frameState) {
   if (!this.replayGroup_ || !this.layerState_) {
     return false;
   } else {
@@ -158,8 +153,7 @@ ol.renderer.webgl.VectorLayer.prototype.hasFeatureAtCoordinate =
 /**
  * @inheritDoc
  */
-ol.renderer.webgl.VectorLayer.prototype.forEachLayerAtPixel =
-    function(pixel, frameState, callback, thisArg) {
+ol.renderer.webgl.VectorLayer.prototype.forEachLayerAtPixel = function(pixel, frameState, callback, thisArg) {
   var coordinate = pixel.slice();
   ol.vec.Mat4.multVec2(
       frameState.pixelToCoordinateMatrix, coordinate, coordinate);
@@ -175,11 +169,10 @@ ol.renderer.webgl.VectorLayer.prototype.forEachLayerAtPixel =
 
 /**
  * Handle changes in image style state.
- * @param {goog.events.Event} event Image style change event.
+ * @param {ol.events.Event} event Image style change event.
  * @private
  */
-ol.renderer.webgl.VectorLayer.prototype.handleStyleImageChange_ =
-    function(event) {
+ol.renderer.webgl.VectorLayer.prototype.handleStyleImageChange_ = function(event) {
   this.renderIfReadyAndVisible();
 };
 
@@ -187,8 +180,7 @@ ol.renderer.webgl.VectorLayer.prototype.handleStyleImageChange_ =
 /**
  * @inheritDoc
  */
-ol.renderer.webgl.VectorLayer.prototype.prepareFrame =
-    function(frameState, layerState, context) {
+ol.renderer.webgl.VectorLayer.prototype.prepareFrame = function(frameState, layerState, context) {
 
   var vectorLayer = /** @type {ol.layer.Vector} */ (this.getLayer());
   goog.asserts.assertInstanceof(vectorLayer, ol.layer.Vector,
@@ -244,12 +236,11 @@ ol.renderer.webgl.VectorLayer.prototype.prepareFrame =
       ol.renderer.vector.getTolerance(resolution, pixelRatio),
       extent, vectorLayer.getRenderBuffer());
   vectorSource.loadFeatures(extent, resolution, projection);
-  var renderFeature =
-      /**
-       * @param {ol.Feature} feature Feature.
-       * @this {ol.renderer.webgl.VectorLayer}
-       */
-      function(feature) {
+  /**
+   * @param {ol.Feature} feature Feature.
+   * @this {ol.renderer.webgl.VectorLayer}
+   */
+  var renderFeature = function(feature) {
     var styles;
     var styleFunction = feature.getStyleFunction();
     if (styleFunction) {
@@ -269,18 +260,17 @@ ol.renderer.webgl.VectorLayer.prototype.prepareFrame =
   if (vectorLayerRenderOrder) {
     /** @type {Array.<ol.Feature>} */
     var features = [];
-    vectorSource.forEachFeatureInExtentAtResolution(extent, resolution,
+    vectorSource.forEachFeatureInExtent(extent,
         /**
          * @param {ol.Feature} feature Feature.
          */
         function(feature) {
           features.push(feature);
         }, this);
-    goog.array.sort(features, vectorLayerRenderOrder);
+    features.sort(vectorLayerRenderOrder);
     features.forEach(renderFeature, this);
   } else {
-    vectorSource.forEachFeatureInExtentAtResolution(
-        extent, resolution, renderFeature, this);
+    vectorSource.forEachFeatureInExtent(extent, renderFeature, this);
   }
   replayGroup.finish(context);
 
@@ -298,19 +288,26 @@ ol.renderer.webgl.VectorLayer.prototype.prepareFrame =
  * @param {ol.Feature} feature Feature.
  * @param {number} resolution Resolution.
  * @param {number} pixelRatio Pixel ratio.
- * @param {Array.<ol.style.Style>} styles Array of styles
+ * @param {(ol.style.Style|Array.<ol.style.Style>)} styles The style or array of
+ *     styles.
  * @param {ol.render.webgl.ReplayGroup} replayGroup Replay group.
  * @return {boolean} `true` if an image is loading.
  */
-ol.renderer.webgl.VectorLayer.prototype.renderFeature =
-    function(feature, resolution, pixelRatio, styles, replayGroup) {
+ol.renderer.webgl.VectorLayer.prototype.renderFeature = function(feature, resolution, pixelRatio, styles, replayGroup) {
   if (!styles) {
     return false;
   }
-  var i, ii, loading = false;
-  for (i = 0, ii = styles.length; i < ii; ++i) {
+  var loading = false;
+  if (goog.isArray(styles)) {
+    for (var i = 0, ii = styles.length; i < ii; ++i) {
+      loading = ol.renderer.vector.renderFeature(
+          replayGroup, feature, styles[i],
+          ol.renderer.vector.getSquaredTolerance(resolution, pixelRatio),
+          this.handleStyleImageChange_, this) || loading;
+    }
+  } else {
     loading = ol.renderer.vector.renderFeature(
-        replayGroup, feature, styles[i],
+        replayGroup, feature, styles,
         ol.renderer.vector.getSquaredTolerance(resolution, pixelRatio),
         this.handleStyleImageChange_, this) || loading;
   }

@@ -9,7 +9,6 @@ goog.require('ol.interaction.Interaction');
 goog.require('ol.interaction.Pointer');
 
 
-
 /**
  * @classdesc
  * Allows the user to zoom and rotate the map by clicking and dragging
@@ -64,7 +63,7 @@ ol.interaction.DragRotateAndZoom = function(opt_options) {
    * @private
    * @type {number}
    */
-  this.duration_ = options.duration ? options.duration : 400;
+  this.duration_ = options.duration !== undefined ? options.duration : 400;
 
 };
 goog.inherits(ol.interaction.DragRotateAndZoom, ol.interaction.Pointer);

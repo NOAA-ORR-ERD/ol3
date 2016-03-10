@@ -1,7 +1,7 @@
 goog.provide('ol.geom.MultiPoint');
 
-goog.require('goog.array');
 goog.require('goog.asserts');
+goog.require('ol.array');
 goog.require('ol.extent');
 goog.require('ol.geom.GeometryLayout');
 goog.require('ol.geom.GeometryType');
@@ -10,7 +10,6 @@ goog.require('ol.geom.SimpleGeometry');
 goog.require('ol.geom.flat.deflate');
 goog.require('ol.geom.flat.inflate');
 goog.require('ol.math');
-
 
 
 /**
@@ -41,7 +40,7 @@ ol.geom.MultiPoint.prototype.appendPoint = function(point) {
   if (!this.flatCoordinates) {
     this.flatCoordinates = point.getFlatCoordinates().slice();
   } else {
-    goog.array.extend(this.flatCoordinates, point.getFlatCoordinates());
+    ol.array.extend(this.flatCoordinates, point.getFlatCoordinates());
   }
   this.changed();
 };
@@ -62,8 +61,7 @@ ol.geom.MultiPoint.prototype.clone = function() {
 /**
  * @inheritDoc
  */
-ol.geom.MultiPoint.prototype.closestPointXY =
-    function(x, y, closestPoint, minSquaredDistance) {
+ol.geom.MultiPoint.prototype.closestPointXY = function(x, y, closestPoint, minSquaredDistance) {
   if (minSquaredDistance <
       ol.extent.closestSquaredDistanceXY(this.getExtent(), x, y)) {
     return minSquaredDistance;
@@ -173,8 +171,7 @@ ol.geom.MultiPoint.prototype.intersectsExtent = function(extent) {
  * @param {ol.geom.GeometryLayout=} opt_layout Layout.
  * @api stable
  */
-ol.geom.MultiPoint.prototype.setCoordinates =
-    function(coordinates, opt_layout) {
+ol.geom.MultiPoint.prototype.setCoordinates = function(coordinates, opt_layout) {
   if (!coordinates) {
     this.setFlatCoordinates(ol.geom.GeometryLayout.XY, null);
   } else {
@@ -193,8 +190,7 @@ ol.geom.MultiPoint.prototype.setCoordinates =
  * @param {ol.geom.GeometryLayout} layout Layout.
  * @param {Array.<number>} flatCoordinates Flat coordinates.
  */
-ol.geom.MultiPoint.prototype.setFlatCoordinates =
-    function(layout, flatCoordinates) {
+ol.geom.MultiPoint.prototype.setFlatCoordinates = function(layout, flatCoordinates) {
   this.setFlatCoordinatesInternal(layout, flatCoordinates);
   this.changed();
 };

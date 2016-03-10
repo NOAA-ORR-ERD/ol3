@@ -37,13 +37,13 @@ describe('ol.interaction.Snap', function() {
         })
       });
 
-      map.on('postrender', function() {
+      map.once('postrender', function() {
         done();
       });
     });
 
     afterEach(function() {
-      goog.dispose(map);
+      map.dispose();
       document.body.removeChild(target);
     });
 

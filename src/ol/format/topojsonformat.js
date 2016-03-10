@@ -1,7 +1,6 @@
 goog.provide('ol.format.TopoJSON');
 
 goog.require('goog.asserts');
-goog.require('goog.object');
 goog.require('ol.Feature');
 goog.require('ol.format.Feature');
 goog.require('ol.format.JSONFeature');
@@ -11,13 +10,13 @@ goog.require('ol.geom.MultiPoint');
 goog.require('ol.geom.MultiPolygon');
 goog.require('ol.geom.Point');
 goog.require('ol.geom.Polygon');
+goog.require('ol.object');
 goog.require('ol.proj');
-
 
 
 /**
  * @classdesc
- * Feature format for reading and writing data in the TopoJSON format.
+ * Feature format for reading data in the TopoJSON format.
  *
  * @constructor
  * @extends {ol.format.JSONFeature}
@@ -260,7 +259,7 @@ ol.format.TopoJSON.readFeatureFromGeometry_ = function(object, arcs,
   var feature = new ol.Feature();
   feature.setGeometry(/** @type {ol.geom.Geometry} */ (
       ol.format.Feature.transformWithOptions(geometry, false, opt_options)));
-  if (object.id) {
+  if (object.id !== undefined) {
     feature.setId(object.id);
   }
   if (object.properties) {
@@ -300,7 +299,7 @@ ol.format.TopoJSON.prototype.readFeaturesFromObject = function(
     }
     /** @type {Array.<ol.Feature>} */
     var features = [];
-    var topoJSONFeatures = goog.object.getValues(topoJSONTopology.objects);
+    var topoJSONFeatures = ol.object.getValues(topoJSONTopology.objects);
     var i, ii;
     var feature;
     for (i = 0, ii = topoJSONFeatures.length; i < ii; ++i) {

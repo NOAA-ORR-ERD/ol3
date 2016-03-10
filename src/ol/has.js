@@ -1,9 +1,30 @@
 goog.provide('ol.has');
 
-goog.require('goog.dom');
 goog.require('ol');
 goog.require('ol.dom');
 goog.require('ol.webgl');
+
+
+var ua = typeof navigator !== 'undefined' ?
+    navigator.userAgent.toLowerCase() : '';
+
+/**
+ * User agent string says we are dealing with Firefox as browser.
+ * @type {boolean}
+ */
+ol.has.FIREFOX = ua.indexOf('firefox') !== -1;
+
+/**
+ * User agent string says we are dealing with Safari as browser.
+ * @type {boolean}
+ */
+ol.has.SAFARI = ua.indexOf('safari') !== -1 && ua.indexOf('chrom') === -1;
+
+/**
+ * User agent string says we are dealing with a Mac as platform.
+ * @type {boolean}
+ */
+ol.has.MAC = ua.indexOf('macintosh') !== -1;
 
 
 /**
@@ -124,7 +145,7 @@ ol.has.WEBGL;
     if ('WebGLRenderingContext' in goog.global) {
       try {
         var canvas = /** @type {HTMLCanvasElement} */
-            (goog.dom.createElement('CANVAS'));
+            (document.createElement('CANVAS'));
         var gl = ol.webgl.getContext(canvas, {
           failIfMajorPerformanceCaveat: true
         });
@@ -134,7 +155,9 @@ ol.has.WEBGL;
               (gl.getParameter(gl.MAX_TEXTURE_SIZE));
           extensions = gl.getSupportedExtensions();
         }
-      } catch (e) {}
+      } catch (e) {
+        // pass
+      }
     }
     ol.has.WEBGL = hasWebGL;
     ol.WEBGL_EXTENSIONS = extensions;

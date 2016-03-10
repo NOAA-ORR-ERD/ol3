@@ -1,14 +1,13 @@
 goog.provide('ol.ImageTile');
 
 goog.require('goog.asserts');
-goog.require('goog.events');
-goog.require('goog.events.EventType');
-goog.require('goog.object');
 goog.require('ol.Tile');
 goog.require('ol.TileCoord');
 goog.require('ol.TileLoadFunctionType');
 goog.require('ol.TileState');
-
+goog.require('ol.events');
+goog.require('ol.events.EventType');
+goog.require('ol.object');
 
 
 /**
@@ -37,7 +36,7 @@ ol.ImageTile = function(tileCoord, state, src, crossOrigin, tileLoadFunction) {
    * @type {Image}
    */
   this.image_ = new Image();
-  if (crossOrigin) {
+  if (crossOrigin !== null) {
     this.image_.crossOrigin = crossOrigin;
   }
 
@@ -49,7 +48,7 @@ ol.ImageTile = function(tileCoord, state, src, crossOrigin, tileLoadFunction) {
 
   /**
    * @private
-   * @type {Array.<goog.events.Key>}
+   * @type {Array.<ol.events.Key>}
    */
   this.imageListenerKeys_ = null;
 
@@ -70,6 +69,9 @@ ol.ImageTile.prototype.disposeInternal = function() {
   if (this.state == ol.TileState.LOADING) {
     this.unlistenImage_();
   }
+  if (this.interimTile) {
+    this.interimTile.dispose();
+  }
   goog.base(this, 'disposeInternal');
 };
 
@@ -85,7 +87,7 @@ ol.ImageTile.prototype.getImage = function(opt_context) {
     var key = goog.getUid(opt_context);
     if (key in this.imageByContext_) {
       return this.imageByContext_[key];
-    } else if (goog.object.isEmpty(this.imageByContext_)) {
+    } else if (ol.object.isEmpty(this.imageByContext_)) {
       image = this.image_;
     } else {
       image = /** @type {Image} */ (this.image_.cloneNode(false));
@@ -144,10 +146,10 @@ ol.ImageTile.prototype.load = function() {
     goog.asserts.assert(!this.imageListenerKeys_,
         'this.imageListenerKeys_ should be null');
     this.imageListenerKeys_ = [
-      goog.events.listenOnce(this.image_, goog.events.EventType.ERROR,
-          this.handleImageError_, false, this),
-      goog.events.listenOnce(this.image_, goog.events.EventType.LOAD,
-          this.handleImageLoad_, false, this)
+      ol.events.listenOnce(this.image_, ol.events.EventType.ERROR,
+          this.handleImageError_, this),
+      ol.events.listenOnce(this.image_, ol.events.EventType.LOAD,
+          this.handleImageLoad_, this)
     ];
     this.tileLoadFunction_(this, this.src_);
   }
@@ -162,6 +164,6 @@ ol.ImageTile.prototype.load = function() {
 ol.ImageTile.prototype.unlistenImage_ = function() {
   goog.asserts.assert(this.imageListenerKeys_,
       'this.imageListenerKeys_ should not be null');
-  this.imageListenerKeys_.forEach(goog.events.unlistenByKey);
+  this.imageListenerKeys_.forEach(ol.events.unlistenByKey);
   this.imageListenerKeys_ = null;
 };

@@ -6,7 +6,6 @@ goog.require('ol.source.OSM');
 goog.require('ol.source.XYZ');
 
 
-
 /**
  * @classdesc
  * Layer source for the MapQuest tile server.
@@ -37,10 +36,12 @@ ol.source.MapQuest = function(opt_options) {
 
   goog.base(this, {
     attributions: layerConfig.attributions,
+    cacheSize: options.cacheSize,
     crossOrigin: 'anonymous',
     logo: 'https://developer.mapquest.com/content/osm/mq_logo.png',
     maxZoom: layerConfig.maxZoom,
-    opaque: true,
+    reprojectionErrorThreshold: options.reprojectionErrorThreshold,
+    opaque: layerConfig.opaque,
     tileLoadFunction: options.tileLoadFunction,
     url: url
   });
@@ -59,11 +60,12 @@ ol.source.MapQuest.TILE_ATTRIBUTION = new ol.Attribution({
 
 
 /**
- * @type {Object.<string, {maxZoom: number, attributions: (Array.<ol.Attribution>)}>}
+ * @type {Object.<string, {maxZoom: number, opaque: boolean, attributions: (Array.<ol.Attribution>)}>}
  */
 ol.source.MapQuestConfig = {
   'osm': {
     maxZoom: 19,
+    opaque: true,
     attributions: [
       ol.source.MapQuest.TILE_ATTRIBUTION,
       ol.source.OSM.ATTRIBUTION
@@ -71,6 +73,7 @@ ol.source.MapQuestConfig = {
   },
   'sat': {
     maxZoom: 18,
+    opaque: true,
     attributions: [
       ol.source.MapQuest.TILE_ATTRIBUTION,
       new ol.Attribution({
@@ -81,6 +84,7 @@ ol.source.MapQuestConfig = {
   },
   'hyb': {
     maxZoom: 18,
+    opaque: false,
     attributions: [
       ol.source.MapQuest.TILE_ATTRIBUTION,
       ol.source.OSM.ATTRIBUTION

@@ -1,15 +1,13 @@
 goog.provide('ol.RendererType');
 goog.provide('ol.renderer.Map');
 
-goog.require('goog.Disposable');
 goog.require('goog.asserts');
-goog.require('goog.dispose');
-goog.require('goog.events');
-goog.require('goog.events.EventType');
 goog.require('goog.functions');
-goog.require('goog.object');
 goog.require('goog.vec.Mat4');
 goog.require('ol');
+goog.require('ol.Disposable');
+goog.require('ol.events');
+goog.require('ol.events.EventType');
 goog.require('ol.extent');
 goog.require('ol.layer.Layer');
 goog.require('ol.renderer.Layer');
@@ -29,10 +27,9 @@ ol.RendererType = {
 };
 
 
-
 /**
  * @constructor
- * @extends {goog.Disposable}
+ * @extends {ol.Disposable}
  * @param {Element} container Container.
  * @param {ol.Map} map Map.
  * @struct
@@ -56,12 +53,12 @@ ol.renderer.Map = function(container, map) {
 
   /**
    * @private
-   * @type {Object.<string, goog.events.Key>}
+   * @type {Object.<string, ol.events.Key>}
    */
   this.layerRendererListeners_ = {};
 
 };
-goog.inherits(ol.renderer.Map, goog.Disposable);
+goog.inherits(ol.renderer.Map, ol.Disposable);
 
 
 /**
@@ -96,8 +93,9 @@ ol.renderer.Map.prototype.createLayerRenderer = goog.abstractMethod;
  * @inheritDoc
  */
 ol.renderer.Map.prototype.disposeInternal = function() {
-  goog.object.forEach(this.layerRenderers_, goog.dispose);
-  goog.base(this, 'disposeInternal');
+  for (var id in this.layerRenderers_) {
+    this.layerRenderers_[id].dispose();
+  }
 };
 
 
@@ -114,8 +112,8 @@ ol.renderer.Map.expireIconCache_ = function(map, frameState) {
 /**
  * @param {ol.Coordinate} coordinate Coordinate.
  * @param {olx.FrameState} frameState FrameState.
- * @param {function(this: S, ol.Feature, ol.layer.Layer): T} callback Feature
- *     callback.
+ * @param {function(this: S, (ol.Feature|ol.render.Feature),
+ *     ol.layer.Layer): T} callback Feature callback.
  * @param {S} thisArg Value to use as `this` when executing `callback`.
  * @param {function(this: U, ol.layer.Layer): boolean} layerFilter Layer filter
  *     function, only layers which are visible and for which this function
@@ -125,26 +123,23 @@ ol.renderer.Map.expireIconCache_ = function(map, frameState) {
  * @return {T|undefined} Callback result.
  * @template S,T,U
  */
-ol.renderer.Map.prototype.forEachFeatureAtCoordinate =
-    function(coordinate, frameState, callback, thisArg,
+ol.renderer.Map.prototype.forEachFeatureAtCoordinate = function(coordinate, frameState, callback, thisArg,
         layerFilter, thisArg2) {
   var result;
   var viewState = frameState.viewState;
   var viewResolution = viewState.resolution;
 
-  /** @type {Object.<string, boolean>} */
-  var features = {};
-
   /**
-   * @param {ol.Feature} feature Feature.
+   * @param {ol.Feature|ol.render.Feature} feature Feature.
+   * @param {ol.layer.Layer} layer Layer.
    * @return {?} Callback result.
    */
-  function forEachFeatureAtCoordinate(feature) {
+  function forEachFeatureAtCoordinate(feature, layer) {
     goog.asserts.assert(feature !== undefined, 'received a feature');
     var key = goog.getUid(feature).toString();
-    if (!(key in features)) {
-      features[key] = true;
-      return callback.call(thisArg, feature, null);
+    var managed = frameState.layerStates[goog.getUid(layer)].managed;
+    if (!(key in frameState.skippedFeatureUids && !managed)) {
+      return callback.call(thisArg, feature, managed ? layer : null);
     }
   }
 
@@ -167,14 +162,13 @@ ol.renderer.Map.prototype.forEachFeatureAtCoordinate =
   for (i = numLayers - 1; i >= 0; --i) {
     var layerState = layerStates[i];
     var layer = layerState.layer;
-    if (!layerState.managed ||
-        (ol.layer.Layer.visibleAtResolution(layerState, viewResolution) &&
-        layerFilter.call(thisArg2, layer))) {
+    if (ol.layer.Layer.visibleAtResolution(layerState, viewResolution) &&
+        layerFilter.call(thisArg2, layer)) {
       var layerRenderer = this.getLayerRenderer(layer);
       if (layer.getSource()) {
         result = layerRenderer.forEachFeatureAtCoordinate(
             layer.getSource().getWrapX() ? translatedCoordinate : coordinate,
-            frameState, callback, thisArg);
+            frameState, forEachFeatureAtCoordinate, thisArg);
       }
       if (result) {
         return result;
@@ -199,8 +193,7 @@ ol.renderer.Map.prototype.forEachFeatureAtCoordinate =
  * @return {T|undefined} Callback result.
  * @template S,T,U
  */
-ol.renderer.Map.prototype.forEachLayerAtPixel =
-    function(pixel, frameState, callback, thisArg,
+ol.renderer.Map.prototype.forEachLayerAtPixel = function(pixel, frameState, callback, thisArg,
         layerFilter, thisArg2) {
   var result;
   var viewState = frameState.viewState;
@@ -237,8 +230,7 @@ ol.renderer.Map.prototype.forEachLayerAtPixel =
  * @return {boolean} Is there a feature at the given coordinate?
  * @template U
  */
-ol.renderer.Map.prototype.hasFeatureAtCoordinate =
-    function(coordinate, frameState, layerFilter, thisArg) {
+ol.renderer.Map.prototype.hasFeatureAtCoordinate = function(coordinate, frameState, layerFilter, thisArg) {
   var hasFeature = this.forEachFeatureAtCoordinate(
       coordinate, frameState, goog.functions.TRUE, this, layerFilter, thisArg);
 
@@ -258,9 +250,8 @@ ol.renderer.Map.prototype.getLayerRenderer = function(layer) {
   } else {
     var layerRenderer = this.createLayerRenderer(layer);
     this.layerRenderers_[layerKey] = layerRenderer;
-    this.layerRendererListeners_[layerKey] = goog.events.listen(layerRenderer,
-        goog.events.EventType.CHANGE, this.handleLayerRendererChange_,
-        false, this);
+    this.layerRendererListeners_[layerKey] = ol.events.listen(layerRenderer,
+        ol.events.EventType.CHANGE, this.handleLayerRendererChange_, this);
 
     return layerRenderer;
   }
@@ -281,7 +272,7 @@ ol.renderer.Map.prototype.getLayerRendererByKey = function(layerKey) {
 
 /**
  * @protected
- * @return {Object.<number, ol.renderer.Layer>} Layer renderers.
+ * @return {Object.<string, ol.renderer.Layer>} Layer renderers.
  */
 ol.renderer.Map.prototype.getLayerRenderers = function() {
   return this.layerRenderers_;
@@ -324,7 +315,7 @@ ol.renderer.Map.prototype.removeLayerRendererByKey_ = function(layerKey) {
 
   goog.asserts.assert(layerKey in this.layerRendererListeners_,
       'given layerKey (%s) exists in layerRendererListeners', layerKey);
-  goog.events.unlistenByKey(this.layerRendererListeners_[layerKey]);
+  ol.events.unlistenByKey(this.layerRendererListeners_[layerKey]);
   delete this.layerRendererListeners_[layerKey];
 
   return layerRenderer;
@@ -343,12 +334,11 @@ ol.renderer.Map.prototype.renderFrame = ol.nullFunction;
  * @param {olx.FrameState} frameState Frame state.
  * @private
  */
-ol.renderer.Map.prototype.removeUnusedLayerRenderers_ =
-    function(map, frameState) {
+ol.renderer.Map.prototype.removeUnusedLayerRenderers_ = function(map, frameState) {
   var layerKey;
   for (layerKey in this.layerRenderers_) {
     if (!frameState || !(layerKey in frameState.layerStates)) {
-      goog.dispose(this.removeLayerRendererByKey_(layerKey));
+      this.removeLayerRendererByKey_(layerKey).dispose();
     }
   }
 };
@@ -359,7 +349,9 @@ ol.renderer.Map.prototype.removeUnusedLayerRenderers_ =
  * @protected
  */
 ol.renderer.Map.prototype.scheduleExpireIconCache = function(frameState) {
-  frameState.postRenderFunctions.push(ol.renderer.Map.expireIconCache_);
+  frameState.postRenderFunctions.push(
+    /** @type {ol.PostRenderFunction} */ (ol.renderer.Map.expireIconCache_)
+  );
 };
 
 
@@ -367,13 +359,13 @@ ol.renderer.Map.prototype.scheduleExpireIconCache = function(frameState) {
  * @param {!olx.FrameState} frameState Frame state.
  * @protected
  */
-ol.renderer.Map.prototype.scheduleRemoveUnusedLayerRenderers =
-    function(frameState) {
+ol.renderer.Map.prototype.scheduleRemoveUnusedLayerRenderers = function(frameState) {
   var layerKey;
   for (layerKey in this.layerRenderers_) {
     if (!(layerKey in frameState.layerStates)) {
       frameState.postRenderFunctions.push(
-          goog.bind(this.removeUnusedLayerRenderers_, this));
+        /** @type {ol.PostRenderFunction} */ (this.removeUnusedLayerRenderers_.bind(this))
+      );
       return;
     }
   }
@@ -381,9 +373,9 @@ ol.renderer.Map.prototype.scheduleRemoveUnusedLayerRenderers =
 
 
 /**
- * @param {ol.layer.LayerState} state1
- * @param {ol.layer.LayerState} state2
- * @return {number}
+ * @param {ol.layer.LayerState} state1 First layer state.
+ * @param {ol.layer.LayerState} state2 Second layer state.
+ * @return {number} The zIndex difference.
  */
 ol.renderer.Map.sortByZIndex = function(state1, state2) {
   return state1.zIndex - state2.zIndex;

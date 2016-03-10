@@ -14,7 +14,6 @@ goog.require('ol.source.ImageVector');
 goog.require('ol.vec.Mat4');
 
 
-
 /**
  * @constructor
  * @extends {ol.renderer.canvas.Layer}
@@ -55,8 +54,7 @@ goog.inherits(ol.renderer.canvas.ImageLayer, ol.renderer.canvas.Layer);
 /**
  * @inheritDoc
  */
-ol.renderer.canvas.ImageLayer.prototype.forEachFeatureAtCoordinate =
-    function(coordinate, frameState, callback, thisArg) {
+ol.renderer.canvas.ImageLayer.prototype.forEachFeatureAtCoordinate = function(coordinate, frameState, callback, thisArg) {
   var layer = this.getLayer();
   var source = layer.getSource();
   var resolution = frameState.viewState.resolution;
@@ -65,7 +63,7 @@ ol.renderer.canvas.ImageLayer.prototype.forEachFeatureAtCoordinate =
   return source.forEachFeatureAtCoordinate(
       coordinate, resolution, rotation, skippedFeatureUids,
       /**
-       * @param {ol.Feature} feature Feature.
+       * @param {ol.Feature|ol.render.Feature} feature Feature.
        * @return {?} Callback result.
        */
       function(feature) {
@@ -77,8 +75,7 @@ ol.renderer.canvas.ImageLayer.prototype.forEachFeatureAtCoordinate =
 /**
  * @inheritDoc
  */
-ol.renderer.canvas.ImageLayer.prototype.forEachLayerAtPixel =
-    function(pixel, frameState, callback, thisArg) {
+ol.renderer.canvas.ImageLayer.prototype.forEachLayerAtPixel = function(pixel, frameState, callback, thisArg) {
   if (!this.getImage()) {
     return undefined;
   }
@@ -144,14 +141,12 @@ ol.renderer.canvas.ImageLayer.prototype.getImageTransform = function() {
 /**
  * @inheritDoc
  */
-ol.renderer.canvas.ImageLayer.prototype.prepareFrame =
-    function(frameState, layerState) {
+ol.renderer.canvas.ImageLayer.prototype.prepareFrame = function(frameState, layerState) {
 
   var pixelRatio = frameState.pixelRatio;
   var viewState = frameState.viewState;
   var viewCenter = viewState.center;
   var viewResolution = viewState.resolution;
-  var viewRotation = viewState.rotation;
 
   var image;
   var imageLayer = this.getLayer();
@@ -170,11 +165,13 @@ ol.renderer.canvas.ImageLayer.prototype.prepareFrame =
   if (!hints[ol.ViewHint.ANIMATING] && !hints[ol.ViewHint.INTERACTING] &&
       !ol.extent.isEmpty(renderedExtent)) {
     var projection = viewState.projection;
-    var sourceProjection = imageSource.getProjection();
-    if (sourceProjection) {
-      goog.asserts.assert(ol.proj.equivalent(projection, sourceProjection),
-          'projection and sourceProjection are equivalent');
-      projection = sourceProjection;
+    if (!ol.ENABLE_RASTER_REPROJECTION) {
+      var sourceProjection = imageSource.getProjection();
+      if (sourceProjection) {
+        goog.asserts.assert(ol.proj.equivalent(projection, sourceProjection),
+            'projection and sourceProjection are equivalent');
+        projection = sourceProjection;
+      }
     }
     image = imageSource.getImage(
         renderedExtent, viewResolution, pixelRatio, projection);
@@ -197,7 +194,7 @@ ol.renderer.canvas.ImageLayer.prototype.prepareFrame =
         pixelRatio * frameState.size[0] / 2,
         pixelRatio * frameState.size[1] / 2,
         scale, scale,
-        viewRotation,
+        0,
         imagePixelRatio * (imageExtent[0] - viewCenter[0]) / imageResolution,
         imagePixelRatio * (viewCenter[1] - imageExtent[3]) / imageResolution);
     this.imageTransformInv_ = null;
@@ -205,5 +202,5 @@ ol.renderer.canvas.ImageLayer.prototype.prepareFrame =
     this.updateLogos(frameState, imageSource);
   }
 
-  return true;
+  return !!this.image_;
 };

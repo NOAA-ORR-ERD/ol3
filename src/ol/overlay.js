@@ -4,7 +4,7 @@ goog.provide('ol.OverlayProperty');
 
 goog.require('goog.asserts');
 goog.require('goog.dom');
-goog.require('goog.events');
+goog.require('ol.events');
 goog.require('goog.style');
 goog.require('ol.Coordinate');
 goog.require('ol.Map');
@@ -45,7 +45,6 @@ ol.OverlayPositioning = {
   TOP_CENTER: 'top-center',
   TOP_RIGHT: 'top-right'
 };
-
 
 
 /**
@@ -96,9 +95,8 @@ ol.Overlay = function(options) {
    * @private
    * @type {Element}
    */
-  this.element_ = goog.dom.createDom('DIV', {
-    'class': 'ol-overlay-container'
-  });
+  this.element_ = document.createElement('DIV');
+  this.element_.className = 'ol-overlay-container';
   this.element_.style.position = 'absolute';
 
   /**
@@ -139,29 +137,29 @@ ol.Overlay = function(options) {
 
   /**
    * @private
-   * @type {goog.events.Key}
+   * @type {?ol.events.Key}
    */
   this.mapPostrenderListenerKey_ = null;
 
-  goog.events.listen(
+  ol.events.listen(
       this, ol.Object.getChangeEventType(ol.OverlayProperty.ELEMENT),
-      this.handleElementChanged, false, this);
+      this.handleElementChanged, this);
 
-  goog.events.listen(
+  ol.events.listen(
       this, ol.Object.getChangeEventType(ol.OverlayProperty.MAP),
-      this.handleMapChanged, false, this);
+      this.handleMapChanged, this);
 
-  goog.events.listen(
+  ol.events.listen(
       this, ol.Object.getChangeEventType(ol.OverlayProperty.OFFSET),
-      this.handleOffsetChanged, false, this);
+      this.handleOffsetChanged, this);
 
-  goog.events.listen(
+  ol.events.listen(
       this, ol.Object.getChangeEventType(ol.OverlayProperty.POSITION),
-      this.handlePositionChanged, false, this);
+      this.handlePositionChanged, this);
 
-  goog.events.listen(
+  ol.events.listen(
       this, ol.Object.getChangeEventType(ol.OverlayProperty.POSITIONING),
-      this.handlePositioningChanged, false, this);
+      this.handlePositioningChanged, this);
 
   if (options.element !== undefined) {
     this.setElement(options.element);
@@ -260,7 +258,7 @@ ol.Overlay.prototype.handleElementChanged = function() {
   goog.dom.removeChildren(this.element_);
   var element = this.getElement();
   if (element) {
-    goog.dom.append(/** @type {!Node} */ (this.element_), element);
+    this.element_.appendChild(element);
   }
 };
 
@@ -271,21 +269,20 @@ ol.Overlay.prototype.handleElementChanged = function() {
 ol.Overlay.prototype.handleMapChanged = function() {
   if (this.mapPostrenderListenerKey_) {
     goog.dom.removeNode(this.element_);
-    goog.events.unlistenByKey(this.mapPostrenderListenerKey_);
+    ol.events.unlistenByKey(this.mapPostrenderListenerKey_);
     this.mapPostrenderListenerKey_ = null;
   }
   var map = this.getMap();
   if (map) {
-    this.mapPostrenderListenerKey_ = goog.events.listen(map,
-        ol.MapEventType.POSTRENDER, this.render, false, this);
+    this.mapPostrenderListenerKey_ = ol.events.listen(map,
+        ol.MapEventType.POSTRENDER, this.render, this);
     this.updatePixelPosition();
     var container = this.stopEvent_ ?
         map.getOverlayContainerStopEvent() : map.getOverlayContainer();
     if (this.insertFirst_) {
-      goog.dom.insertChildAt(/** @type {!Element} */ (
-          container), this.element_, 0);
+      goog.dom.insertChildAt(container, this.element_, 0);
     } else {
-      goog.dom.append(/** @type {!Node} */ (container), this.element_);
+      container.appendChild(this.element_);
     }
   }
 };
@@ -438,7 +435,7 @@ ol.Overlay.prototype.panIntoView_ = function() {
  * Get the extent of an element relative to the document
  * @param {Element|undefined} element The element.
  * @param {ol.Size|undefined} size The size of the element.
- * @return {ol.Extent}
+ * @return {ol.Extent} The extent.
  * @private
  */
 ol.Overlay.prototype.getRect_ = function(element, size) {
@@ -469,7 +466,7 @@ ol.Overlay.prototype.setPositioning = function(positioning) {
 
 /**
  * Modify the visibility of the element.
- * @param {boolean} visible
+ * @param {boolean} visible Element visibility.
  * @protected
  */
 ol.Overlay.prototype.setVisible = function(visible) {
@@ -499,8 +496,8 @@ ol.Overlay.prototype.updatePixelPosition = function() {
 
 
 /**
- * @param {ol.Pixel} pixel
- * @param {ol.Size|undefined} mapSize
+ * @param {ol.Pixel} pixel The pixel location.
+ * @param {ol.Size|undefined} mapSize The map size.
  * @protected
  */
 ol.Overlay.prototype.updateRenderedPosition = function(pixel, mapSize) {
