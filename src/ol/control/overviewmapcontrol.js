@@ -2,11 +2,8 @@ goog.provide('ol.control.OverviewMap');
 
 goog.require('goog.asserts');
 goog.require('goog.dom');
-goog.require('goog.dom.classlist');
 goog.require('ol.events');
 goog.require('ol.events.EventType');
-goog.require('goog.math.Size');
-goog.require('goog.style');
 goog.require('ol');
 goog.require('ol.Collection');
 goog.require('ol.Map');
@@ -111,7 +108,9 @@ ol.control.OverviewMap = function(opt_options) {
         }, this);
   }
 
-  var box = goog.dom.createDom('DIV', 'ol-overviewmap-box');
+  var box = document.createElement('DIV');
+  box.className = 'ol-overviewmap-box';
+  box.style.boxSizing = 'border-box';
 
   /**
    * @type {ol.Overlay}
@@ -282,17 +281,17 @@ ol.control.OverviewMap.prototype.validateExtent_ = function() {
       ovmap.getPixelFromCoordinate(ol.extent.getTopLeft(extent));
   var bottomRightPixel =
       ovmap.getPixelFromCoordinate(ol.extent.getBottomRight(extent));
-  var boxSize = new goog.math.Size(
-      Math.abs(topLeftPixel[0] - bottomRightPixel[0]),
-      Math.abs(topLeftPixel[1] - bottomRightPixel[1]));
+
+  var boxWidth = Math.abs(topLeftPixel[0] - bottomRightPixel[0]);
+  var boxHeight = Math.abs(topLeftPixel[1] - bottomRightPixel[1]);
 
   var ovmapWidth = ovmapSize[0];
   var ovmapHeight = ovmapSize[1];
 
-  if (boxSize.width < ovmapWidth * ol.OVERVIEWMAP_MIN_RATIO ||
-      boxSize.height < ovmapHeight * ol.OVERVIEWMAP_MIN_RATIO ||
-      boxSize.width > ovmapWidth * ol.OVERVIEWMAP_MAX_RATIO ||
-      boxSize.height > ovmapHeight * ol.OVERVIEWMAP_MAX_RATIO) {
+  if (boxWidth < ovmapWidth * ol.OVERVIEWMAP_MIN_RATIO ||
+      boxHeight < ovmapHeight * ol.OVERVIEWMAP_MIN_RATIO ||
+      boxWidth > ovmapWidth * ol.OVERVIEWMAP_MAX_RATIO ||
+      boxHeight > ovmapHeight * ol.OVERVIEWMAP_MAX_RATIO) {
     this.resetExtent_();
   } else if (!ol.extent.containsExtent(ovextent, extent)) {
     this.recenter_();
@@ -396,10 +395,8 @@ ol.control.OverviewMap.prototype.updateBox_ = function() {
 
   // set box size calculated from map extent size and overview map resolution
   if (box) {
-    var boxWidth = Math.abs((bottomLeft[0] - topRight[0]) / ovresolution);
-    var boxHeight = Math.abs((topRight[1] - bottomLeft[1]) / ovresolution);
-    goog.style.setBorderBoxSize(box, new goog.math.Size(
-        boxWidth, boxHeight));
+    box.style.width = Math.abs((bottomLeft[0] - topRight[0]) / ovresolution) + 'px';
+    box.style.height = Math.abs((topRight[1] - bottomLeft[1]) / ovresolution) + 'px';
   }
 };
 
@@ -446,7 +443,7 @@ ol.control.OverviewMap.prototype.handleClick_ = function(event) {
  * @private
  */
 ol.control.OverviewMap.prototype.handleToggle_ = function() {
-  goog.dom.classlist.toggle(this.element, 'ol-collapsed');
+  this.element.classList.toggle('ol-collapsed');
   if (this.collapsed_) {
     goog.dom.replaceNode(this.collapseLabel_, this.label_);
   } else {
@@ -489,7 +486,7 @@ ol.control.OverviewMap.prototype.setCollapsible = function(collapsible) {
     return;
   }
   this.collapsible_ = collapsible;
-  goog.dom.classlist.toggle(this.element, 'ol-uncollapsible');
+  this.element.classList.toggle('ol-uncollapsible');
   if (!collapsible && this.collapsed_) {
     this.handleToggle_();
   }

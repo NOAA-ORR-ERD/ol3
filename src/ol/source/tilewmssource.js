@@ -5,19 +5,19 @@
 goog.provide('ol.source.TileWMS');
 
 goog.require('goog.asserts');
-goog.require('goog.math');
-goog.require('goog.string');
 goog.require('goog.uri.utils');
 goog.require('ol');
 goog.require('ol.TileCoord');
 goog.require('ol.extent');
 goog.require('ol.object');
+goog.require('ol.math');
 goog.require('ol.proj');
 goog.require('ol.size');
 goog.require('ol.source.TileImage');
 goog.require('ol.source.wms');
 goog.require('ol.source.wms.ServerType');
 goog.require('ol.tilecoord');
+goog.require('ol.string');
 
 
 /**
@@ -277,7 +277,7 @@ ol.source.TileWMS.prototype.getRequestUrl_ = function(tileCoord, tileSize, tileE
   if (urls.length == 1) {
     url = urls[0];
   } else {
-    var index = goog.math.modulo(ol.tilecoord.hash(tileCoord), urls.length);
+    var index = ol.math.modulo(ol.tilecoord.hash(tileCoord), urls.length);
     url = urls[index];
   }
   return goog.uri.utils.appendParamsFromMap(url, params);
@@ -390,5 +390,5 @@ ol.source.TileWMS.prototype.updateParams = function(params) {
  */
 ol.source.TileWMS.prototype.updateV13_ = function() {
   var version = this.params_['VERSION'] || ol.DEFAULT_WMS_VERSION;
-  this.v13_ = goog.string.compareVersions(version, '1.3') >= 0;
+  this.v13_ = ol.string.compareVersions(version, '1.3') >= 0;
 };

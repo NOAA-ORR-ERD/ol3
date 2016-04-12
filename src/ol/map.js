@@ -7,12 +7,7 @@ goog.provide('ol.MapProperty');
 
 goog.require('goog.asserts');
 goog.require('goog.async.nextTick');
-goog.require('goog.debug.Console');
 goog.require('goog.dom');
-goog.require('goog.dom.classlist');
-goog.require('goog.functions');
-goog.require('goog.log');
-goog.require('goog.log.Level');
 goog.require('goog.style');
 goog.require('goog.vec.Mat4');
 goog.require('ol.Collection');
@@ -39,6 +34,7 @@ goog.require('ol.events');
 goog.require('ol.events.Event');
 goog.require('ol.events.EventType');
 goog.require('ol.extent');
+goog.require('ol.functions');
 goog.require('ol.has');
 goog.require('ol.interaction');
 goog.require('ol.layer.Base');
@@ -258,7 +254,7 @@ ol.Map = function(options) {
    * @type {Element}
    */
   this.viewport_ = document.createElement('DIV');
-  this.viewport_.className = 'ol-viewport';
+  this.viewport_.className = 'ol-viewport' + (ol.has.TOUCH ? ' ol-touch' : '');
   this.viewport_.style.position = 'relative';
   this.viewport_.style.overflow = 'hidden';
   this.viewport_.style.width = '100%';
@@ -266,9 +262,6 @@ ol.Map = function(options) {
   // prevent page zoom on IE >= 10 browsers
   this.viewport_.style.msTouchAction = 'none';
   this.viewport_.style.touchAction = 'none';
-  if (ol.has.TOUCH) {
-    goog.dom.classlist.add(this.viewport_, 'ol-touch');
-  }
 
   /**
    * @private
@@ -585,12 +578,12 @@ ol.Map.prototype.disposeInternal = function() {
   ol.events.unlisten(this.viewport_, ol.events.EventType.MOUSEWHEEL,
       this.handleBrowserEvent, this);
   if (this.handleResize_ !== undefined) {
-    goog.global.removeEventListener(ol.events.EventType.RESIZE,
+    ol.global.removeEventListener(ol.events.EventType.RESIZE,
         this.handleResize_, false);
     this.handleResize_ = undefined;
   }
   if (this.animationDelayKey_) {
-    goog.global.cancelAnimationFrame(this.animationDelayKey_);
+    ol.global.cancelAnimationFrame(this.animationDelayKey_);
     this.animationDelayKey_ = undefined;
   }
   this.setTarget(null);
@@ -631,7 +624,7 @@ ol.Map.prototype.forEachFeatureAtPixel = function(pixel, callback, opt_this, opt
   var coordinate = this.getCoordinateFromPixel(pixel);
   var thisArg = opt_this !== undefined ? opt_this : null;
   var layerFilter = opt_layerFilter !== undefined ?
-      opt_layerFilter : goog.functions.TRUE;
+      opt_layerFilter : ol.functions.TRUE;
   var thisArg2 = opt_this2 !== undefined ? opt_this2 : null;
   return this.renderer_.forEachFeatureAtCoordinate(
       coordinate, this.frameState_, callback, thisArg,
@@ -667,7 +660,7 @@ ol.Map.prototype.forEachLayerAtPixel = function(pixel, callback, opt_this, opt_l
   }
   var thisArg = opt_this !== undefined ? opt_this : null;
   var layerFilter = opt_layerFilter !== undefined ?
-      opt_layerFilter : goog.functions.TRUE;
+      opt_layerFilter : ol.functions.TRUE;
   var thisArg2 = opt_this2 !== undefined ? opt_this2 : null;
   return this.renderer_.forEachLayerAtPixel(
       pixel, this.frameState_, callback, thisArg,
@@ -696,7 +689,7 @@ ol.Map.prototype.hasFeatureAtPixel = function(pixel, opt_layerFilter, opt_this) 
   }
   var coordinate = this.getCoordinateFromPixel(pixel);
   var layerFilter = opt_layerFilter !== undefined ?
-      opt_layerFilter : goog.functions.TRUE;
+      opt_layerFilter : ol.functions.TRUE;
   var thisArg = opt_this !== undefined ? opt_this : null;
   return this.renderer_.hasFeatureAtCoordinate(
       coordinate, this.frameState_, layerFilter, thisArg);
@@ -1067,7 +1060,12 @@ ol.Map.prototype.handleTargetChanged_ = function() {
   // If it's not now an Element we remove the viewport from the DOM.
   // If it's an Element we append the viewport element to it.
 
-  var targetElement = this.getTargetElement();
+  var targetElement;
+  if (this.getTarget()) {
+    targetElement = this.getTargetElement();
+    goog.asserts.assert(targetElement !== null,
+        'expects a non-null value for targetElement');
+  }
 
   if (this.keyHandlerKeys_) {
     for (var i = 0, ii = this.keyHandlerKeys_.length; i < ii; ++i) {
@@ -1079,7 +1077,7 @@ ol.Map.prototype.handleTargetChanged_ = function() {
   if (!targetElement) {
     goog.dom.removeNode(this.viewport_);
     if (this.handleResize_ !== undefined) {
-      goog.global.removeEventListener(ol.events.EventType.RESIZE,
+      ol.global.removeEventListener(ol.events.EventType.RESIZE,
           this.handleResize_, false);
       this.handleResize_ = undefined;
     }
@@ -1097,7 +1095,7 @@ ol.Map.prototype.handleTargetChanged_ = function() {
 
     if (!this.handleResize_) {
       this.handleResize_ = this.updateSize.bind(this);
-      goog.global.addEventListener(ol.events.EventType.RESIZE,
+      ol.global.addEventListener(ol.events.EventType.RESIZE,
           this.handleResize_, false);
     }
   }
@@ -1201,7 +1199,7 @@ ol.Map.prototype.isRendered = function() {
  */
 ol.Map.prototype.renderSync = function() {
   if (this.animationDelayKey_) {
-    goog.global.cancelAnimationFrame(this.animationDelayKey_);
+    ol.global.cancelAnimationFrame(this.animationDelayKey_);
   }
   this.animationDelay_();
 };
@@ -1213,7 +1211,7 @@ ol.Map.prototype.renderSync = function() {
  */
 ol.Map.prototype.render = function() {
   if (this.animationDelayKey_ === undefined) {
-    this.animationDelayKey_ = goog.global.requestAnimationFrame(
+    this.animationDelayKey_ = ol.global.requestAnimationFrame(
         this.animationDelay_);
   }
 };
@@ -1517,7 +1515,7 @@ ol.Map.createOptionsInternal = function(options) {
    */
   var rendererTypes;
   if (options.renderer !== undefined) {
-    if (goog.isArray(options.renderer)) {
+    if (Array.isArray(options.renderer)) {
       rendererTypes = options.renderer;
     } else if (typeof options.renderer === 'string') {
       rendererTypes = [options.renderer];
@@ -1552,7 +1550,7 @@ ol.Map.createOptionsInternal = function(options) {
 
   var controls;
   if (options.controls !== undefined) {
-    if (goog.isArray(options.controls)) {
+    if (Array.isArray(options.controls)) {
       controls = new ol.Collection(options.controls.slice());
     } else {
       goog.asserts.assertInstanceof(options.controls, ol.Collection,
@@ -1565,7 +1563,7 @@ ol.Map.createOptionsInternal = function(options) {
 
   var interactions;
   if (options.interactions !== undefined) {
-    if (goog.isArray(options.interactions)) {
+    if (Array.isArray(options.interactions)) {
       interactions = new ol.Collection(options.interactions.slice());
     } else {
       goog.asserts.assertInstanceof(options.interactions, ol.Collection,
@@ -1578,7 +1576,7 @@ ol.Map.createOptionsInternal = function(options) {
 
   var overlays;
   if (options.overlays !== undefined) {
-    if (goog.isArray(options.overlays)) {
+    if (Array.isArray(options.overlays)) {
       overlays = new ol.Collection(options.overlays.slice());
     } else {
       goog.asserts.assertInstanceof(options.overlays, ol.Collection,
@@ -1603,12 +1601,3 @@ ol.Map.createOptionsInternal = function(options) {
 
 
 ol.proj.common.add();
-
-
-if (goog.DEBUG) {
-  (function() {
-    goog.debug.Console.autoInstall();
-    var logger = goog.log.getLogger('ol');
-    logger.setLevel(goog.log.Level.FINEST);
-  })();
-}

@@ -93,13 +93,25 @@ ol.source.Vector = function(opt_options) {
    */
   this.loader_ = ol.nullFunction;
 
+  /**
+   * @private
+   * @type {ol.format.Feature|undefined}
+   */
+  this.format_ = options.format;
+
+  /**
+   * @private
+   * @type {string|ol.FeatureUrlFunction|undefined}
+   */
+  this.url_ = options.url;
+
   if (options.loader !== undefined) {
     this.loader_ = options.loader;
-  } else if (options.url !== undefined) {
-    goog.asserts.assert(options.format !== undefined,
+  } else if (this.url_ !== undefined) {
+    goog.asserts.assert(this.format_ !== undefined,
         'format must be set when url is set');
     // create a XHR feature loader for "url" and "format"
-    this.loader_ = ol.featureloader.xhr(options.url, options.format);
+    this.loader_ = ol.featureloader.xhr(this.url_, this.format_);
   }
 
   /**
@@ -160,7 +172,7 @@ ol.source.Vector = function(opt_options) {
   if (options.features instanceof ol.Collection) {
     collection = options.features;
     features = collection.getArray();
-  } else if (goog.isArray(options.features)) {
+  } else if (Array.isArray(options.features)) {
     features = options.features;
   }
   if (!useSpatialIndex && collection === undefined) {
@@ -600,10 +612,13 @@ ol.source.Vector.prototype.getFeaturesInExtent = function(extent) {
  * This method is not available when the source is configured with
  * `useSpatialIndex` set to `false`.
  * @param {ol.Coordinate} coordinate Coordinate.
+ * @param {function(ol.Feature):boolean=} opt_filter Feature filter function.
+ *     The filter function will receive one argument, the {@link ol.Feature feature}
+ *     and it should return a boolean value. By default, no filtering is made.
  * @return {ol.Feature} Closest feature.
  * @api stable
  */
-ol.source.Vector.prototype.getClosestFeatureToCoordinate = function(coordinate) {
+ol.source.Vector.prototype.getClosestFeatureToCoordinate = function(coordinate, opt_filter) {
   // Find the closest feature using branch and bound.  We start searching an
   // infinite extent, and find the distance from the first feature found.  This
   // becomes the closest feature.  We then compute a smaller extent which any
@@ -620,28 +635,31 @@ ol.source.Vector.prototype.getClosestFeatureToCoordinate = function(coordinate) 
   goog.asserts.assert(this.featuresRtree_,
       'getClosestFeatureToCoordinate does not work with useSpatialIndex set ' +
       'to false');
+  var filter = opt_filter ? opt_filter : ol.functions.TRUE;
   this.featuresRtree_.forEachInExtent(extent,
       /**
        * @param {ol.Feature} feature Feature.
        */
       function(feature) {
-        var geometry = feature.getGeometry();
-        goog.asserts.assert(geometry,
-            'feature geometry is defined and not null');
-        var previousMinSquaredDistance = minSquaredDistance;
-        minSquaredDistance = geometry.closestPointXY(
-            x, y, closestPoint, minSquaredDistance);
-        if (minSquaredDistance < previousMinSquaredDistance) {
-          closestFeature = feature;
-          // This is sneaky.  Reduce the extent that it is currently being
-          // searched while the R-Tree traversal using this same extent object
-          // is still in progress.  This is safe because the new extent is
-          // strictly contained by the old extent.
-          var minDistance = Math.sqrt(minSquaredDistance);
-          extent[0] = x - minDistance;
-          extent[1] = y - minDistance;
-          extent[2] = x + minDistance;
-          extent[3] = y + minDistance;
+        if (filter(feature)) {
+          var geometry = feature.getGeometry();
+          goog.asserts.assert(geometry,
+              'feature geometry is defined and not null');
+          var previousMinSquaredDistance = minSquaredDistance;
+          minSquaredDistance = geometry.closestPointXY(
+              x, y, closestPoint, minSquaredDistance);
+          if (minSquaredDistance < previousMinSquaredDistance) {
+            closestFeature = feature;
+            // This is sneaky.  Reduce the extent that it is currently being
+            // searched while the R-Tree traversal using this same extent object
+            // is still in progress.  This is safe because the new extent is
+            // strictly contained by the old extent.
+            var minDistance = Math.sqrt(minSquaredDistance);
+            extent[0] = x - minDistance;
+            extent[1] = y - minDistance;
+            extent[2] = x + minDistance;
+            extent[3] = y + minDistance;
+          }
         }
       });
   return closestFeature;
@@ -675,6 +693,28 @@ ol.source.Vector.prototype.getExtent = function() {
 ol.source.Vector.prototype.getFeatureById = function(id) {
   var feature = this.idIndex_[id.toString()];
   return feature !== undefined ? feature : null;
+};
+
+
+/**
+ * Get the format associated with this source.
+ *
+ * @return {ol.format.Feature|undefined} The feature format.
+ * @api
+ */
+ol.source.Vector.prototype.getFormat = function() {
+  return this.format_;
+};
+
+
+/**
+ * Get the url associated with this source.
+ *
+ * @return {string|ol.FeatureUrlFunction|undefined} The url.
+ * @api
+ */
+ol.source.Vector.prototype.getUrl = function() {
+  return this.url_;
 };
 
 

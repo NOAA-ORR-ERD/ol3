@@ -426,7 +426,7 @@ ol.format.KML.createFeatureStyleFunction_ = function(style, styleUrl,
  * @private
  */
 ol.format.KML.findStyle_ = function(styleValue, defaultStyle, sharedStyles) {
-  if (goog.isArray(styleValue)) {
+  if (Array.isArray(styleValue)) {
     return styleValue;
   } else if (typeof styleValue === 'string') {
     // KML files in the wild occasionally forget the leading `#` on styleUrls
@@ -1267,7 +1267,7 @@ ol.format.KML.PlacemarkStyleMapParser_ = function(node, objectStack) {
   var placemarkObject = objectStack[objectStack.length - 1];
   goog.asserts.assert(goog.isObject(placemarkObject),
       'placemarkObject should be an Object');
-  if (goog.isArray(styleMapValue)) {
+  if (Array.isArray(styleMapValue)) {
     placemarkObject['Style'] = styleMapValue;
   } else if (typeof styleMapValue === 'string') {
     placemarkObject['styleUrl'] = styleMapValue;
@@ -1327,7 +1327,7 @@ ol.format.KML.innerBoundaryIsParser_ = function(node, objectStack) {
   if (flatLinearRing) {
     var flatLinearRings = /** @type {Array.<Array.<number>>} */
         (objectStack[objectStack.length - 1]);
-    goog.asserts.assert(goog.isArray(flatLinearRings),
+    goog.asserts.assert(Array.isArray(flatLinearRings),
         'flatLinearRings should be an array');
     goog.asserts.assert(flatLinearRings.length > 0,
         'flatLinearRings array should not be empty');
@@ -1352,7 +1352,7 @@ ol.format.KML.outerBoundaryIsParser_ = function(node, objectStack) {
   if (flatLinearRing) {
     var flatLinearRings = /** @type {Array.<Array.<number>>} */
         (objectStack[objectStack.length - 1]);
-    goog.asserts.assert(goog.isArray(flatLinearRings),
+    goog.asserts.assert(Array.isArray(flatLinearRings),
         'flatLinearRings should be an array');
     goog.asserts.assert(flatLinearRings.length > 0,
         'flatLinearRings array should not be empty');
@@ -2386,7 +2386,7 @@ ol.format.KML.writePlacemark_ = function(node, feature, objectStack) {
     // resolution-independent here
     var styles = styleFunction.call(feature, 0);
     if (styles) {
-      var style = goog.isArray(styles) ? styles[0] : styles;
+      var style = Array.isArray(styles) ? styles[0] : styles;
       if (this.writeStyles_) {
         properties['Style'] = style;
       }
@@ -2484,7 +2484,9 @@ ol.format.KML.writePolyStyle_ = function(node, style, objectStack) {
  * @private
  */
 ol.format.KML.writeScaleTextNode_ = function(node, scale) {
-  ol.format.XSD.writeDecimalTextNode(node, scale * scale);
+  // the Math is to remove any excess decimals created by float arithmetic
+  ol.format.XSD.writeDecimalTextNode(node,
+      Math.round(scale * scale * 1e6) / 1e6);
 };
 
 

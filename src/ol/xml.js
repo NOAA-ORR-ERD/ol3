@@ -120,17 +120,6 @@ ol.xml.getAttributeNS = function(node, namespaceURI, name) {
  * @param {Node} node Node.
  * @param {?string} namespaceURI Namespace URI.
  * @param {string} name Attribute name.
- * @return {?Node} Attribute node or null if none found.
- */
-ol.xml.getAttributeNodeNS = function(node, namespaceURI, name) {
-  return node.getAttributeNodeNS(namespaceURI, name);
-};
-
-
-/**
- * @param {Node} node Node.
- * @param {?string} namespaceURI Namespace URI.
- * @param {string} name Attribute name.
  * @param {string|number} value Value.
  */
 ol.xml.setAttributeNS = function(node, namespaceURI, name, value) {
@@ -167,11 +156,11 @@ ol.xml.makeArrayExtender = function(valueReader, opt_this) {
       function(node, objectStack) {
         var value = valueReader.call(opt_this, node, objectStack);
         if (value !== undefined) {
-          goog.asserts.assert(goog.isArray(value),
+          goog.asserts.assert(Array.isArray(value),
               'valueReader function is expected to return an array of values');
           var array = /** @type {Array.<*>} */
               (objectStack[objectStack.length - 1]);
-          goog.asserts.assert(goog.isArray(array),
+          goog.asserts.assert(Array.isArray(array),
               'objectStack is supposed to be an array of arrays');
           ol.array.extend(array, value);
         }
@@ -198,7 +187,7 @@ ol.xml.makeArrayPusher = function(valueReader, opt_this) {
             node, objectStack);
         if (value !== undefined) {
           var array = objectStack[objectStack.length - 1];
-          goog.asserts.assert(goog.isArray(array),
+          goog.asserts.assert(Array.isArray(array),
               'objectStack is supposed to be an array of arrays');
           array.push(value);
         }

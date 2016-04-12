@@ -2,7 +2,6 @@ goog.provide('ol.render.webgl.ImageReplay');
 goog.provide('ol.render.webgl.ReplayGroup');
 
 goog.require('goog.asserts');
-goog.require('goog.functions');
 goog.require('goog.vec.Mat4');
 goog.require('ol.extent');
 goog.require('ol.object');
@@ -246,12 +245,6 @@ ol.render.webgl.ImageReplay.prototype.getDeleteResourcesFunction = function(cont
 
 
 /**
- * @inheritDoc
- */
-ol.render.webgl.ImageReplay.prototype.drawAsync = goog.abstractMethod;
-
-
-/**
  * @param {Array.<number>} flatCoordinates Flat coordinates.
  * @param {number} offset Offset.
  * @param {number} end End.
@@ -370,7 +363,7 @@ ol.render.webgl.ImageReplay.prototype.drawCoordinates_ = function(flatCoordinate
 /**
  * @inheritDoc
  */
-ol.render.webgl.ImageReplay.prototype.drawMultiPointGeometry = function(multiPointGeometry, feature) {
+ol.render.webgl.ImageReplay.prototype.drawMultiPoint = function(multiPointGeometry, feature) {
   this.startIndices_.push(this.indices_.length);
   this.startIndicesFeature_.push(feature);
   var flatCoordinates = multiPointGeometry.getFlatCoordinates();
@@ -383,7 +376,7 @@ ol.render.webgl.ImageReplay.prototype.drawMultiPointGeometry = function(multiPoi
 /**
  * @inheritDoc
  */
-ol.render.webgl.ImageReplay.prototype.drawPointGeometry = function(pointGeometry, feature) {
+ol.render.webgl.ImageReplay.prototype.drawPoint = function(pointGeometry, feature) {
   this.startIndices_.push(this.indices_.length);
   this.startIndicesFeature_.push(feature);
   var flatCoordinates = pointGeometry.getFlatCoordinates();
@@ -960,7 +953,14 @@ ol.render.webgl.ReplayGroup.prototype.getDeleteResourcesFunction = function(cont
     functions.push(
         this.replays_[replayKey].getDeleteResourcesFunction(context));
   }
-  return goog.functions.sequence.apply(null, functions);
+  return function() {
+    var length = functions.length;
+    var result;
+    for (var i = 0; i < length; i++) {
+      result = functions[i].apply(this, arguments);
+    }
+    return result;
+  };
 };
 
 

@@ -14,6 +14,7 @@ goog.require('ol.MapBrowserEvent');
 goog.require('ol.MapBrowserEvent.EventType');
 goog.require('ol.Object');
 goog.require('ol.coordinate');
+goog.require('ol.functions');
 goog.require('ol.events.condition');
 goog.require('ol.geom.Circle');
 goog.require('ol.geom.GeometryType');
@@ -337,6 +338,11 @@ ol.interaction.Draw.prototype.setMap = function(map) {
  * @api
  */
 ol.interaction.Draw.handleEvent = function(mapBrowserEvent) {
+  if ((this.mode_ === ol.interaction.DrawMode.LINE_STRING ||
+    this.mode_ === ol.interaction.DrawMode.POLYGON) &&
+    this.freehandCondition_(mapBrowserEvent)) {
+    this.freehand_ = true;
+  }
   var pass = !this.freehand_;
   if (this.freehand_ &&
       mapBrowserEvent.type === ol.MapBrowserEvent.EventType.POINTERDRAG) {
@@ -362,11 +368,8 @@ ol.interaction.Draw.handleDownEvent_ = function(event) {
   if (this.condition_(event)) {
     this.downPx_ = event.pixel;
     return true;
-  } else if ((this.mode_ === ol.interaction.DrawMode.LINE_STRING ||
-      this.mode_ === ol.interaction.DrawMode.POLYGON) &&
-      this.freehandCondition_(event)) {
+  } else if (this.freehand_) {
     this.downPx_ = event.pixel;
-    this.freehand_ = true;
     if (!this.finishCoordinate_) {
       this.startDrawing_(event);
     }
@@ -739,7 +742,7 @@ ol.interaction.Draw.prototype.extend = function(feature) {
 /**
  * @inheritDoc
  */
-ol.interaction.Draw.prototype.shouldStopEvent = goog.functions.FALSE;
+ol.interaction.Draw.prototype.shouldStopEvent = ol.functions.FALSE;
 
 
 /**

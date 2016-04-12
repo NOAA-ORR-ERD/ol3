@@ -175,7 +175,6 @@ ol.renderer.dom.VectorLayer.prototype.dispatchEvent_ = function(type, frameState
     var event = new ol.render.Event(type, layer, render, frameState,
         context, null);
     layer.dispatchEvent(event);
-    render.flush();
   }
 };
 
@@ -339,7 +338,7 @@ ol.renderer.dom.VectorLayer.prototype.renderFeature = function(feature, resoluti
     return false;
   }
   var loading = false;
-  if (goog.isArray(styles)) {
+  if (Array.isArray(styles)) {
     for (var i = 0, ii = styles.length; i < ii; ++i) {
       loading = ol.renderer.vector.renderFeature(
           replayGroup, feature, styles[i],
